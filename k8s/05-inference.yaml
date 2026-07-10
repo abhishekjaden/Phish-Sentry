@@ -1,0 +1,56 @@
+# Inference service: serves the RoBERTa text model + XGBoost URL model (ONNX
+# Runtime). Models are baked into the image (Dockerfile.inference), so no PVC —
+# the readiness probe only passes once /health responds, which is after models
+# finish loading at import. Replace the image ref with your ECR repo after push.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference
+  namespace: phishsentry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inference
+  template:
+    metadata:
+      labels:
+        app: inference
+    spec:
+      containers:
+        - name: inference
+          image: 192497949426.dkr.ecr.ap-south-1.amazonaws.com/phishsentry-inference:latest
+          ports:
+            - containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1.5Gi"
+            limits:
+              memory: "3Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference
+  namespace: phishsentry
+spec:
+  selector:
+    app: inference
+  ports:
+    - port: 9000
+      targetPort: 9000

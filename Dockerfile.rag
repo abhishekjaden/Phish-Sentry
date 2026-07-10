@@ -1,0 +1,43 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install CPU-only PyTorch first so we don't pull the multi-GB CUDA build.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements.rag.txt .
+RUN pip install --no-cache-dir -r requirements.rag.txt
+
+# ---------------------------------------------------------------------------
+# Bake the BGE models into the image at BUILD time.
+#
+# Previously these downloaded at runtime into a mounted cache volume. On
+# Kubernetes that means every fresh pod re-downloads before it can serve, and
+# needs a model PVC. Baking them in makes pods start with the weights already
+# present (no PVC, no re-download). We download via the SAME calls
+# rag_service.py uses (SentenceTransformer + CrossEncoder) so the runtime load
+# hits the identical cached snapshot under HF_HOME.
+# ---------------------------------------------------------------------------
+ENV HF_HOME=/models \
+    HF_HUB_DISABLE_TELEMETRY=1
+
+ARG RAG_EMBED_MODEL=BAAI/bge-large-en-v1.5
+ARG RAG_RERANK_MODEL=BAAI/bge-reranker-base
+
+RUN RAG_EMBED_MODEL=$RAG_EMBED_MODEL RAG_RERANK_MODEL=$RAG_RERANK_MODEL python -c "\
+from sentence_transformers import SentenceTransformer, CrossEncoder; \
+import os; \
+SentenceTransformer(os.environ.get('RAG_EMBED_MODEL', 'BAAI/bge-large-en-v1.5')); \
+CrossEncoder(os.environ.get('RAG_RERANK_MODEL', 'BAAI/bge-reranker-base')); \
+print('Baked embed + reranker into', os.environ['HF_HOME'])"
+
+# App code copied AFTER the model bake so code edits don't invalidate the
+# expensive model layer in the Docker build cache.
+COPY rag_service.py ingest_rag.py rag_corpus.json ./
+
+EXPOSE 9100
+CMD ["uvicorn", "rag_service:app", "--host", "0.0.0.0", "--port", "9100"]

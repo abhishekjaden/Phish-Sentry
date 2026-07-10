@@ -1,0 +1,51 @@
+# Inference service — holds the ML models
+FROM python:3.10-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Locale support for ONNX Runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    locales \
+    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+    && locale-gen \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+COPY --from=builder /install /usr/local
+
+COPY inference_service.py .
+COPY tracing_config.py .
+COPY url_features.py .
+COPY url_resolver.py .
+COPY homograph.py .
+COPY models/url_xgb_model.json models/
+COPY models/url_model_config.json models/
+
+# Model files
+COPY models/roberta_phishing_model.pth models/
+COPY models/roberta_tokenizer/ models/roberta_tokenizer/
+COPY models/model.onnx models/
+COPY models/roberta_base_local/ models/roberta_base_local/
+
+RUN useradd --create-home appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')" || exit 1
+
+CMD ["uvicorn", "inference_service:app", "--host", "0.0.0.0", "--port", "9000", "--workers", "1"]

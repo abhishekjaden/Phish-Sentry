@@ -1,0 +1,53 @@
+# Secrets -- NEVER commit these
+.env
+*.db
+
+# Kaggle API credentials -- never commit (holds username + API key)
+kaggle.json
+models/kaggle.json
+**/kaggle.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+myenv/
+venv/
+.venv/
+
+# Models (too large for Git -- store in S3 or Git LFS)
+models/*.h5
+models/*.pth
+models/*.onnx
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal email data -- collected from private inbox, NEVER commit
+emails_for_review.csv
+emails_labeled*.csv
+emails.csv
+models/emails.csv
+
+# Large model weights (>100MB, GitHub rejects) -- host on HuggingFace instead
+models/*.safetensors
+*.safetensors
+
+# Training notebooks with potentially large embedded outputs (optional)
+# BERTEMAIL.ipynb        # uncomment if you don't want the training notebook public
+
+# Backup files from editing (not for public repo)
+*.bak
+*.bak2
+
+# Abandoned experiment: GAN-CNN-ANN URL notebook (NOT the deployed model, which
+# is XGBoost). Excluded to keep the repo about what's actually deployed.
+url-phishing-ann-cnn*.ipynb
+
+# Local scratch DB
+phishing.db

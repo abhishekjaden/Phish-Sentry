@@ -1,0 +1,21 @@
+# Non-secret environment shared across pods. Anything with a credential is in
+# the Secret instead. Service hostnames here are Kubernetes Service names
+# (postgres / redis / inference / rag), which resolve via cluster DNS — the
+# K8s equivalent of the compose service names (note: compose's "db" service
+# is named "postgres" here for clarity).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: phishsentry-config
+  namespace: phishsentry
+data:
+  REDIS_URL: "redis://redis:6379/0"
+  INFERENCE_URL: "http://inference:9000"
+  RAG_URL: "http://rag:9100"
+  SESSION_COOKIE_SECURE: "true"
+  ALLOWED_ORIGINS: "https://phishsentry.app"
+  RAG_EMBED_MODEL: "BAAI/bge-large-en-v1.5"
+  RAG_RERANK_MODEL: "BAAI/bge-reranker-base"
+  HF_HOME: "/models"
+  POSTGRES_USER: "phishguard"
+  POSTGRES_DB: "phishguard"

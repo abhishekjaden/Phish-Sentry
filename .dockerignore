@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+myenv/
+venv/
+.venv/
+.env
+*.db
+.git/
+.gitignore
+.vscode/
+*.ipynb
+*.zip
+node_modules/

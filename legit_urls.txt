@@ -1,0 +1,325 @@
+# Legitimate URLs for PhishSentry URL-model retraining
+# All entries are real, legitimate sites. One URL per line. Blank lines and
+# lines starting with '#' are ignored by the extractor.
+# Weighted toward the categories the URL model currently over-flags:
+# universities, grad-admissions portals, internship boards, cloud/dev tools.
+
+# ============================================================
+# US UNIVERSITIES (grad CS / cybersecurity programs + target schools)
+# ============================================================
+https://www.gatech.edu
+https://www.cc.gatech.edu
+https://grad.gatech.edu
+https://tech.cornell.edu
+https://www.cornell.edu
+https://www.cmu.edu
+https://www.heinz.cmu.edu
+https://www.ini.cmu.edu
+https://duke.edu
+https://pratt.duke.edu
+https://www.jhu.edu
+https://engineering.jhu.edu
+https://www.nyu.edu
+https://engineering.nyu.edu
+https://www.northeastern.edu
+https://www.khoury.northeastern.edu
+https://uci.edu
+https://www.ics.uci.edu
+https://www.umd.edu
+https://www.cs.umd.edu
+https://mage.umd.edu
+https://www.mit.edu
+https://www.stanford.edu
+https://cs.stanford.edu
+https://www.berkeley.edu
+https://eecs.berkeley.edu
+https://www.illinois.edu
+https://cs.illinois.edu
+https://www.gatech.edu/admission
+https://www.usc.edu
+https://www.viterbi.usc.edu
+https://www.washington.edu
+https://www.cs.washington.edu
+https://www.utexas.edu
+https://www.cs.utexas.edu
+https://www.gatech.edu/academics
+https://www.purdue.edu
+https://www.cs.purdue.edu
+https://www.wisc.edu
+https://www.cs.wisc.edu
+https://www.umich.edu
+https://cse.engin.umich.edu
+https://www.columbia.edu
+https://www.cs.columbia.edu
+https://www.gatech.edu/research
+https://www.ncsu.edu
+https://www.csc.ncsu.edu
+https://www.asu.edu
+https://scai.engineering.asu.edu
+
+# ============================================================
+# UK UNIVERSITIES
+# ============================================================
+https://www.ucl.ac.uk
+https://www.ucl.ac.uk/computer-science
+https://www.manchester.ac.uk
+https://www.cs.manchester.ac.uk
+https://www.imperial.ac.uk
+https://www.ox.ac.uk
+https://www.cam.ac.uk
+https://www.ed.ac.uk
+https://www.inf.ed.ac.uk
+https://www.kcl.ac.uk
+https://warwick.ac.uk
+https://www.bristol.ac.uk
+https://www.southampton.ac.uk
+https://www.gla.ac.uk
+https://www.leeds.ac.uk
+https://www.sheffield.ac.uk
+https://www.birmingham.ac.uk
+https://www.nottingham.ac.uk
+https://www.qmul.ac.uk
+https://www.bath.ac.uk
+
+# ============================================================
+# IRELAND UNIVERSITIES
+# ============================================================
+https://www.tcd.ie
+https://www.scss.tcd.ie
+https://www.ucd.ie
+https://www.universityofgalway.ie
+https://www.ul.ie
+https://www.dcu.ie
+https://www.mu.ie
+https://www.ucc.ie
+
+# ============================================================
+# SINGAPORE UNIVERSITIES
+# ============================================================
+https://www.nus.edu.sg
+https://www.comp.nus.edu.sg
+https://nus.edu.sg/oam
+https://www.ntu.edu.sg
+https://www.ntu.edu.sg/scse
+https://www.smu.edu.sg
+https://www.sutd.edu.sg
+
+# ============================================================
+# OTHER INTL UNIVERSITIES (Canada / Australia / Europe)
+# ============================================================
+https://www.utoronto.ca
+https://www.cs.toronto.edu
+https://uwaterloo.ca
+https://cs.uwaterloo.ca
+https://www.ubc.ca
+https://www.mcgill.ca
+https://www.unimelb.edu.au
+https://www.sydney.edu.au
+https://www.unsw.edu.au
+https://www.anu.edu.au
+https://www.monash.edu
+https://www.ethz.ch
+https://www.epfl.ch
+https://www.tudelft.nl
+https://www.tum.de
+https://www.kth.se
+https://www.uva.nl
+
+# ============================================================
+# GRAD ADMISSIONS / APPLICATION PORTALS (newish domains = failure category)
+# ============================================================
+https://gradadmissions.gatech.edu
+https://app.applyweb.com
+https://apply.embark.com
+https://applygrad.cornell.edu
+https://gradapply.cmu.edu
+https://applyto.duke.edu
+https://apply.grad.jhu.edu
+https://gsas.nyu.edu
+https://www.commonapp.org
+https://apply.commonapp.org
+https://www.gradschools.com
+https://www.petersons.com
+https://www.usnews.com/best-graduate-schools
+https://www.timeshighereducation.com
+https://www.topuniversities.com
+https://www.mastersportal.com
+https://www.findamasters.com
+https://www.ets.org
+https://www.ets.org/gre
+https://www.ieltsidpindia.com
+https://www.wes.org
+https://www.prodigyfinance.com
+https://www.mpowerfinancing.com
+
+# ============================================================
+# INTERNSHIP / JOB BOARDS
+# ============================================================
+https://www.linkedin.com
+https://www.linkedin.com/jobs
+https://internshala.com
+https://internshala.com/internships
+https://www.naukri.com
+https://www.indeed.com
+https://in.indeed.com
+https://www.glassdoor.com
+https://joinhandshake.com
+https://www.wellfound.com
+https://wellfound.com/jobs
+https://unstop.com
+https://unstop.com/internships
+https://www.hackerrank.com
+https://www.hackerearth.com
+https://www.turing.com
+https://www.instahyre.com
+https://cutshort.io
+https://www.foundit.in
+https://www.simplyhired.com
+https://www.ziprecruiter.com
+https://weworkremotely.com
+https://remoteok.com
+https://www.dice.com
+https://angel.co
+https://www.prosple.com
+https://in.prosple.com
+
+# ============================================================
+# BIG TECH + CLOUD (the ones we SAW it wrongly flag)
+# ============================================================
+https://aws.amazon.com
+https://console.aws.amazon.com
+https://us-east-1.console.aws.amazon.com
+https://health.aws.amazon.com
+https://signin.aws.amazon.com
+https://github.com
+https://github.com/login
+https://docs.github.com
+https://www.google.com
+https://accounts.google.com
+https://myaccount.google.com
+https://cloud.google.com
+https://console.cloud.google.com
+https://www.microsoft.com
+https://login.microsoftonline.com
+https://azure.microsoft.com
+https://portal.azure.com
+https://claude.ai
+https://www.anthropic.com
+https://openai.com
+https://chatgpt.com
+https://www.apple.com
+https://www.amazon.in
+https://www.amazon.com
+https://www.netflix.com
+https://www.meta.com
+https://www.ibm.com
+https://www.oracle.com
+https://www.salesforce.com
+https://www.adobe.com
+https://www.nvidia.com
+
+# ============================================================
+# SAAS / DEV TOOLS (newish domains it over-flags)
+# ============================================================
+https://huggingface.co
+https://huggingface.co/models
+https://colab.research.google.com
+https://www.kaggle.com
+https://gitlab.com
+https://bitbucket.org
+https://stackoverflow.com
+https://stackexchange.com
+https://www.docker.com
+https://hub.docker.com
+https://kubernetes.io
+https://www.jenkins.io
+https://circleci.com
+https://vercel.com
+https://netlify.com
+https://render.com
+https://railway.app
+https://fly.io
+https://neon.tech
+https://supabase.com
+https://planetscale.com
+https://www.mongodb.com
+https://redis.io
+https://www.postgresql.org
+https://www.datadoghq.com
+https://sentry.io
+https://grafana.com
+https://prometheus.io
+https://www.terraform.io
+https://www.hashicorp.com
+https://www.cloudflare.com
+https://www.digitalocean.com
+https://www.heroku.com
+https://www.notion.so
+https://www.figma.com
+https://slack.com
+https://discord.com
+https://zoom.us
+https://calendly.com
+https://www.postman.com
+https://www.jetbrains.com
+https://code.visualstudio.com
+https://www.python.org
+https://pypi.org
+https://nodejs.org
+https://www.npmjs.com
+https://reactjs.org
+https://pytorch.org
+https://www.tensorflow.org
+https://scikit-learn.org
+https://xgboost.readthedocs.io
+https://shap.readthedocs.io
+
+# ============================================================
+# LEARNING / MOOC / RESEARCH
+# ============================================================
+https://www.coursera.org
+https://www.edx.org
+https://www.udemy.com
+https://www.datacamp.com
+https://www.codecademy.com
+https://www.khanacademy.org
+https://leetcode.com
+https://www.geeksforgeeks.org
+https://neetcode.io
+https://www.ieee.org
+https://ieeexplore.ieee.org
+https://cmt3.research.microsoft.com
+https://easychair.org
+https://arxiv.org
+https://scholar.google.com
+https://www.researchgate.net
+https://orcid.org
+https://dl.acm.org
+https://link.springer.com
+https://www.sciencedirect.com
+https://www.tryhackme.com
+https://www.hackthebox.com
+https://www.whizlabs.com
+https://www.educative.io
+
+# ============================================================
+# GOV / OFFICIAL / FINANCIAL (India + intl)
+# ============================================================
+https://www.usa.gov
+https://www.gov.uk
+https://travel.state.gov
+https://www.uscis.gov
+https://ec.europa.eu
+https://www.india.gov.in
+https://www.uidai.gov.in
+https://www.incometax.gov.in
+https://www.onlinesbi.sbi
+https://www.hdfcbank.com
+https://www.icicibank.com
+https://netbanking.hdfcbank.com
+https://www.paypal.com
+https://razorpay.com
+https://stripe.com
+https://www.visa.com
+https://www.mastercard.com
+https://www.rbi.org.in

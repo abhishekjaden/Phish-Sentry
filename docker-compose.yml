@@ -1,0 +1,163 @@
+services:
+  app:
+    build: .
+    container_name: phishguard
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://phishguard:phishguard_secret@db:5432/phishguard
+      - REDIS_URL=redis://redis:6379/0
+      - INFERENCE_URL=http://inference:9000
+      - RAG_URL=http://rag:9100
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
+    restart: unless-stopped
+
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile.inference
+    container_name: phishguard-inference
+    ports:
+      - "9000:9000"
+    # Readiness gate: /health only responds once the models have finished
+    # loading (they load at import, before the server serves), so the app
+    # won't be allowed to start until inference can actually answer. This
+    # eliminates the post-restart "empty reply" window.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    restart: unless-stopped
+
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile.rag
+    container_name: phishguard-rag
+    ports:
+      - "9100:9100"
+    environment:
+      - DATABASE_URL=postgresql://phishguard:phishguard_secret@db:5432/phishguard
+      - RAG_EMBED_MODEL=BAAI/bge-large-en-v1.5
+      - RAG_RERANK_MODEL=BAAI/bge-reranker-base
+      - HF_HOME=/models          # HuggingFace cache -> persisted volume
+    volumes:
+      - hf_cache:/models
+    depends_on:
+      db:
+        condition: service_healthy
+    # First boot downloads ~2.4GB of model weights into the hf_cache volume,
+    # so allow a long start_period before health failures count.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9100/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 600s
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: phishguard-worker
+    command: celery -A tasks worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://phishguard:phishguard_secret@db:5432/phishguard
+      - INFERENCE_URL=http://inference:9000
+    depends_on:
+      redis:
+        condition: service_healthy
+    # The worker runs Celery, not an HTTP server, so the app image's inherited
+    # HTTP healthcheck always fails. Override it with a Celery broker ping:
+    # `inspect ping` returns 0 if at least one worker replies.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A tasks inspect ping -t 10 >/dev/null 2>&1 || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: phishguard-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: phishguard-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: phishguard-jaeger
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+
+  db:
+    # pgvector/pgvector:pg16 = Postgres 16 with the `vector` extension available.
+    # Same major version as postgres:16-alpine, so the pgdata volume carries over.
+    image: pgvector/pgvector:pg16
+    container_name: phishguard-db
+    environment:
+      POSTGRES_USER: phishguard
+      POSTGRES_PASSWORD: phishguard_secret
+      POSTGRES_DB: phishguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phishguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: phishguard-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  grafana_data:
+  hf_cache:

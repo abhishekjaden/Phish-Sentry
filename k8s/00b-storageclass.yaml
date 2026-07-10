@@ -1,0 +1,14 @@
+# Defines the "gp3" StorageClass the Postgres PVC requests. EKS ships a default
+# gp2 class, but gp3 is cheaper/faster, so we declare it explicitly and back it
+# with the EBS CSI driver (installed as an addon in the eksctl config).
+# WaitForFirstConsumer ties the volume to the AZ where the pod actually lands.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  encrypted: "true"

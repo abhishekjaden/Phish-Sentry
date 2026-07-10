@@ -1,0 +1,52 @@
+# PhishSentry EKS cluster definition.
+#   eksctl create cluster -f eksctl-cluster.yaml
+#
+# Sized for the ML workload: the rag service alone loads ~2.4GB of BGE models,
+# inference loads RoBERTa + XGBoost, so nodes need real RAM. Two t3.xlarge
+# (4 vCPU / 16GB each = 32GB across the cluster) gives headroom for all pods
+# plus room for the HPA to scale app replicas.
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: phishsentry
+  region: ap-south-1          # Mumbai — lowest latency from Chennai
+  version: "1.31"             # use the latest EKS-supported version available
+
+# OIDC is required for IAM Roles for Service Accounts (IRSA), which the
+# AWS Load Balancer Controller and the EBS CSI driver both need.
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+    - metadata:
+        name: ebs-csi-controller-sa
+        namespace: kube-system
+      wellKnownPolicies:
+        ebsCSIController: true
+
+# Managed addons. The EBS CSI driver backs the PersistentVolumeClaims for
+# Postgres (pgvector) and Redis with dynamically-provisioned gp3 volumes.
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: aws-ebs-csi-driver
+
+managedNodeGroups:
+  - name: ng-phishsentry
+    instanceType: t3.xlarge   # 4 vCPU / 16 GB
+    minSize: 2
+    maxSize: 4
+    desiredCapacity: 2
+    volumeSize: 60            # GB, gp3 root — model-baked images are large
+    volumeType: gp3
+    labels:
+      workload: phishsentry
+    tags:
+      project: phishsentry

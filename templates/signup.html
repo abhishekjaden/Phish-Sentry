@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - AI Phishing Detection System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(to bottom right, #0f172a 0%, #1e293b 50%, #334155 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 py-12">
+    
+    <div class="absolute inset-0 overflow-hidden opacity-20">
+        <div class="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-20 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 4s;"></div>
+    </div>
+
+    <div class="w-full max-w-6xl relative z-10 grid md:grid-cols-5 gap-8 items-start">
+        
+        <div class="md:col-span-2 text-white space-y-6 hidden md:block sticky top-12">
+            <div class="space-y-4">
+                <div class="inline-block p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl float-animation">
+                    <i class="bi bi-shield-fill-plus text-5xl"></i>
+                </div>
+                <h1 class="text-5xl font-black leading-tight">
+                    Join the
+                    <span class="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                        Security Revolution
+                    </span>
+                </h1>
+                <p class="text-gray-300 text-lg">
+                    Create your account and start protecting yourself with cutting-edge AI technology
+                </p>
+            </div>
+
+            <div class="space-y-4 pt-6">
+                <div class="flex items-center gap-4 p-4 glass-effect rounded-xl hover:bg-white/10 transition-all cursor-default">
+                    <div class="flex-shrink-0 w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-search text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Deep Analysis</h3>
+                        <p class="text-sm text-gray-400">Email & URL scanning</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 p-4 glass-effect rounded-xl hover:bg-white/10 transition-all cursor-default">
+                    <div class="flex-shrink-0 w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-book text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Learning Hub</h3>
+                        <p class="text-sm text-gray-400">Quiz & AI chatbot</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 p-4 glass-effect rounded-xl hover:bg-white/10 transition-all cursor-default">
+                    <div class="flex-shrink-0 w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-clock-history text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Scan History</h3>
+                        <p class="text-sm text-gray-400">Track all analyses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:col-span-3 glass-effect rounded-3xl p-8 md:p-12 shadow-2xl">
+            <div class="mb-8">
+                <a href="/" class="inline-flex items-center gap-2 text-2xl font-bold text-white hover:text-purple-400 transition-colors">
+                    <i class="bi bi-shield-fill-check"></i>
+                    <span>PhishSentry AI</span>
+                </a>
+            </div>
+
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Create Your Account</h2>
+                <p class="text-gray-400">Fill in your details to get started</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{% if category == 'success' %}bg-green-500/20 border-green-500/50{% else %}bg-red-500/20 border-red-500/50{% endif %} border rounded-xl p-4 mb-6 backdrop-blur-sm">
+                            <p class="font-semibold text-white flex items-center gap-2">
+                                <i class="bi {% if category == 'success' %}bi-check-circle-fill text-green-400{% else %}bi-exclamation-triangle-fill text-red-400{% endif %}"></i>
+                                {{ message }}
+                            </p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/signup" method="post" id="signupForm" class="space-y-5">
+                <div>
+                    <label class="block text-white font-semibold mb-2 text-sm">Account Type</label>
+                    <div class="relative">
+                        <i class="bi bi-person-gear absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <select 
+                            name="role" 
+                            id="role"
+                            required
+                            class="w-full pl-12 pr-10 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:border-purple-500 focus:outline-none appearance-none input-glow transition-all"
+                        >
+                            <option value="user" class="bg-slate-800">User Account</option>
+                        </select>
+                        <i class="bi bi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Admin accounts require system administrator approval</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-white font-semibold mb-2 text-sm">First Name</label>
+                        <div class="relative">
+                            <i class="bi bi-person absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="text" 
+                                name="first_name" 
+                                id="firstName"
+                                required
+                                class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                                placeholder="First name"
+                            >
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-white font-semibold mb-2 text-sm">Last Name</label>
+                        <div class="relative">
+                            <i class="bi bi-person absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="text" 
+                                name="last_name" 
+                                id="lastName"
+                                required
+                                class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                                placeholder="Last name"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-white font-semibold mb-2 text-sm">Email Address</label>
+                    <div class="relative">
+                        <i class="bi bi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="email"
+                            required
+                            class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                            placeholder="your.email@example.com"
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-white font-semibold mb-2 text-sm">Username</label>
+                    <div class="relative">
+                        <i class="bi bi-at absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input 
+                            type="text" 
+                            name="username" 
+                            id="username"
+                            required
+                            minlength="4"
+                            class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                            placeholder="Choose a unique username"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-white font-semibold mb-2 text-sm">Password</label>
+                        <div class="relative">
+                            <i class="bi bi-key absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="password" 
+                                name="password" 
+                                id="password"
+                                required
+                                minlength="6"
+                                class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                                placeholder="Min. 6 characters"
+                            >
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-white font-semibold mb-2 text-sm">Confirm Password</label>
+                        <div class="relative">
+                            <i class="bi bi-key-fill absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="password" 
+                                name="confirm_password" 
+                                id="confirmPassword"
+                                required
+                                class="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none input-glow transition-all"
+                                placeholder="Re-enter password"
+                            >
+                        </div>
+                        <p id="passwordMatch" class="text-sm mt-2"></p>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <label class="flex items-start cursor-pointer group">
+                        <input type="checkbox" name="agree_terms" id="agreeTerms" required class="w-5 h-5 mt-0.5 rounded border-gray-600 bg-white/10 text-purple-500 focus:ring-purple-500 focus:ring-offset-gray-900">
+                        <span class="ml-3 text-gray-300 text-sm group-hover:text-white transition-colors">
+                            I agree to the <span class="text-purple-400 font-semibold">Terms of Service</span> and <span class="text-purple-400 font-semibold">Privacy Policy</span> for AI Phishing Detection System
+                        </span>
+                    </label>
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="signupBtn"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/60 transition-all duration-300"
+                >
+                    Create Account
+                </button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <p class="text-gray-400">
+                    Already have an account? 
+                    <a href="/login" class="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            const matchDiv = document.getElementById('passwordMatch');
+            
+            if (confirmPassword === '') {
+                matchDiv.textContent = '';
+                matchDiv.className = 'text-sm mt-2';
+            } else if (password === confirmPassword) {
+                matchDiv.textContent = '✓ Passwords match';
+                matchDiv.className = 'text-sm mt-2 text-green-400 font-semibold';
+            } else {
+                matchDiv.textContent = '✗ Passwords do not match';
+                matchDiv.className = 'text-sm mt-2 text-red-400 font-semibold';
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+
+            const submitBtn = document.getElementById('signupBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span>Creating Account...';
+        });
+
+        window.addEventListener('load', function() {
+            const form = document.getElementById('signupForm');
+            form.reset();
+            
+            const submitBtn = document.getElementById('signupBtn');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Create Account';
+        });
+    </script>
+</body>
+</html>

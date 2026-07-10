@@ -1,0 +1,43 @@
+# Celery worker for async work (SHAP computation, WHOIS lookups). No Service —
+# it consumes from Redis, it doesn't serve HTTP. Liveness uses a Celery broker
+# ping (the same check the compose healthcheck used) since there's no HTTP port.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: phishsentry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: 192497949426.dkr.ecr.ap-south-1.amazonaws.com/phishsentry-app:latest
+          command: ["celery", "-A", "tasks", "worker", "--loglevel=info", "--concurrency=2"]
+          envFrom:
+            - configMapRef:
+                name: phishsentry-config
+            - secretRef:
+                name: phishsentry-secrets
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "celery -A tasks inspect ping -t 10 >/dev/null 2>&1 || exit 1"
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              memory: "1.5Gi"

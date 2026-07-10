@@ -1,0 +1,52 @@
+# Redis serves as the Celery broker and the Flask-Limiter store. The compose
+# stack ran it without a volume (ephemeral), so it's a Deployment here, not a
+# StatefulSet — losing the cache/broker on restart is acceptable for this
+# workload and keeps the manifest honest to what we actually run.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: phishsentry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: phishsentry
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

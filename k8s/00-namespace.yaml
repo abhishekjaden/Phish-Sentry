@@ -1,0 +1,8 @@
+# All PhishSentry resources live in their own namespace for clean isolation
+# and easy teardown (kubectl delete namespace phishsentry removes everything).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: phishsentry
+  labels:
+    app.kubernetes.io/part-of: phishsentry

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection - AI Phishing Detection System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .scan-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .scan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+        }
+        .scan-card.active {
+            border-color: rgb(139, 92, 246);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+        }
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+            }
+        }
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen">
+    
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 gradient-bg border-r border-slate-700 flex flex-col z-40">
+        <div class="p-6 border-b border-slate-700">
+            <a href="/dashboard" class="flex items-center gap-3 text-white">
+                <div class="p-2 bg-purple-600 rounded-lg">
+                    <i class="bi bi-shield-fill-check text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">PhishSentry</h1>
+                    <p class="text-xs text-slate-400">AI Security</p>
+                </div>
+            </a>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/detection?type=email" class="flex items-center gap-3 px-4 py-3 text-white bg-purple-600 rounded-lg font-medium">
+                <i class="bi bi-search"></i>
+                <span>Detection</span>
+            </a>
+            <a href="/history" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-clock-history"></i>
+                <span>History</span>
+            </a>
+            <a href="/quiz" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-question-circle"></i>
+                <span>Quiz</span>
+            </a>
+            <a href="/chatbot" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-chat-dots"></i>
+                <span>Chatbot</span>
+            </a>
+            <a href="/about" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-info-circle"></i>
+                <span>About</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {{ user.first_name[0] }}
+                </div>
+                <div class="flex-1">
+                    <p class="text-white font-medium text-sm">{{ user.first_name }}</p>
+                    <p class="text-slate-400 text-xs truncate">{{ user.email }}</p>
+                </div>
+            </div>
+            <a href="/logout" class="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-slate-800 rounded-lg transition-all text-sm">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <div class="bg-slate-800 border-b border-slate-700 px-8 py-4 sticky top-0 z-30">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Security Analysis 🔍</h2>
+                    <p class="text-slate-400 text-sm">Choose analysis type and scan for threats</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="/dashboard" class="px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all text-sm flex items-center gap-2">
+                        <i class="bi bi-house"></i>
+                        <span>Back to Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <!-- Analysis Type Selector -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <button 
+                    onclick="switchTab('email')" 
+                    id="emailCard"
+                    class="scan-card active border-2 rounded-2xl p-8 text-left cursor-pointer"
+                >
+                    <div class="flex items-start gap-6">
+                        <div class="p-4 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex-shrink-0">
+                            <i class="bi bi-envelope-paper text-white text-4xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-white mb-2">Email Text Analysis</h3>
+                            <p class="text-slate-400 mb-4">Analyze email content using RoBERTa-powered natural language processing to detect phishing attempts and suspicious patterns.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium border border-blue-500/30">RoBERTa NLP</span>
+                                <span class="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium border border-purple-500/30">SHAP Explainability</span>
+                                <span class="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-xs font-medium border border-cyan-500/30">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+
+                <button 
+                    onclick="switchTab('url')" 
+                    id="urlCard"
+                    class="scan-card border-2 border-slate-700 rounded-2xl p-8 text-left cursor-pointer"
+                >
+                    <div class="flex items-start gap-6">
+                        <div class="p-4 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex-shrink-0">
+                            <i class="bi bi-link-45deg text-white text-4xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-white mb-2">URL Security Check</h3>
+                            <p class="text-slate-400 mb-4">Verify link safety using an XGBoost model with 20-point feature analysis including domain age, SSL, and network inspection.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium border border-green-500/30">XGBoost</span>
+                                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium border border-emerald-500/30">20+ Features</span>
+                                <span class="px-3 py-1 bg-teal-500/20 text-teal-400 rounded-full text-xs font-medium border border-teal-500/30">Deep Scan</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+
+                <button 
+                    onclick="switchTab('agent')" 
+                    id="agentCard"
+                    class="scan-card border-2 border-slate-700 rounded-2xl p-8 text-left cursor-pointer"
+                >
+                    <div class="flex items-start gap-6">
+                        <div class="p-4 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex-shrink-0">
+                            <i class="bi bi-robot text-white text-4xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-white mb-2">AI Agent Analysis</h3>
+                            <p class="text-slate-400 mb-4">An autonomous agent that picks the right tools, reasons over the evidence, and grounds its verdict in the threat-intel knowledge base.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium border border-purple-500/30">Tool-using</span>
+                                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-xs font-medium border border-indigo-500/30">RAG-grounded</span>
+                                <span class="px-3 py-1 bg-fuchsia-500/20 text-fuchsia-400 rounded-full text-xs font-medium border border-fuchsia-500/30">Reasoning</span>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Email Analysis Form -->
+            <div id="emailContent" class="bg-slate-800 border border-slate-700 rounded-2xl p-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-blue-600 rounded-xl">
+                        <i class="bi bi-envelope-check text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Email Content Scanner</h3>
+                        <p class="text-slate-400 text-sm">Paste email text for AI-powered phishing detection</p>
+                    </div>
+                </div>
+
+                <form id="emailForm" class="space-y-6">
+                    <div>
+                        <label class="block text-white font-semibold mb-3">Email Content</label>
+                        <textarea 
+                            name="email_text" 
+                            id="emailText"
+                            required
+                            rows="12"
+                            class="w-full p-5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none transition-all"
+                            placeholder="Paste the complete email content here including subject line and body text...&#10;&#10;Example:&#10;Subject: Urgent Account Verification Required&#10;&#10;Dear Customer,&#10;Your account has been flagged for suspicious activity..."
+                        ></textarea>
+                        <div class="flex items-center gap-2 mt-3">
+                            <i class="bi bi-info-circle text-purple-400"></i>
+                            <p class="text-sm text-slate-400">
+                                Include both subject line and email body for best detection accuracy
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-cpu text-blue-400 text-xl"></i>
+                                <h4 class="text-blue-300 font-bold text-sm">RoBERTa Model</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Advanced NLP for context understanding</p>
+                        </div>
+
+                        <div class="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-diagram-3 text-purple-400 text-xl"></i>
+                                <h4 class="text-purple-300 font-bold text-sm">SHAP Analysis</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Explains which words triggered alerts</p>
+                        </div>
+
+                        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-lightning-charge text-cyan-400 text-xl"></i>
+                                <h4 class="text-cyan-300 font-bold text-sm">Instant Results</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Get confidence scores immediately</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        id="emailSubmitBtn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+                    >
+                        <i class="bi bi-search text-xl"></i>
+                        <span class="text-lg">Analyze Email Content</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- URL Analysis Form -->
+            <div id="urlContent" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-green-600 rounded-xl">
+                        <i class="bi bi-shield-check text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">URL Security Scanner</h3>
+                        <p class="text-slate-400 text-sm">Check links for malicious or phishing content</p>
+                    </div>
+                </div>
+
+                <form id="urlForm" class="space-y-6">
+                    <div>
+                        <label class="block text-white font-semibold mb-3">URL to Analyze</label>
+                        <div class="relative">
+                            <i class="bi bi-link-45deg absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 text-2xl"></i>
+                            <input 
+                                type="url" 
+                                name="url" 
+                                id="urlInput"
+                                required
+                                class="w-full pl-16 pr-5 py-5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-lg"
+                                placeholder="https://example.com or www.example.com"
+                            >
+                        </div>
+                        <div class="flex items-center gap-2 mt-3">
+                            <i class="bi bi-info-circle text-purple-400"></i>
+                            <p class="text-sm text-slate-400">
+                                Enter the complete URL including http:// or https:// protocol
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-shield-fill-check text-green-400 text-xl"></i>
+                                <h4 class="text-green-300 font-bold text-sm">XGBoost Model</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Gradient-boosted trees for deep analysis</p>
+                        </div>
+
+                        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-list-check text-emerald-400 text-xl"></i>
+                                <h4 class="text-emerald-300 font-bold text-sm">20+ Features</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Comprehensive security checks</p>
+                        </div>
+
+                        <div class="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="bi bi-globe text-teal-400 text-xl"></i>
+                                <h4 class="text-teal-300 font-bold text-sm">Network Scan</h4>
+                            </div>
+                            <p class="text-slate-400 text-xs">Domain age, SSL, DNS analysis</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        id="urlSubmitBtn"
+                        class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40"
+                    >
+                        <i class="bi bi-shield-check text-xl"></i>
+                        <span class="text-lg">Check URL Security</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Agent Analysis Form -->
+            <div id="agentContent" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-purple-600 rounded-xl">
+                        <i class="bi bi-robot text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">AI Agent Analysis</h3>
+                        <p class="text-slate-400 text-sm">Paste a URL or email &mdash; the agent autonomously picks tools, reasons, and explains its verdict</p>
+                    </div>
+                </div>
+
+                <form id="agentForm" class="space-y-6">
+                    <div>
+                        <label class="block text-white font-semibold mb-3">URL or Email Content</label>
+                        <textarea
+                            id="agentInput"
+                            required
+                            rows="6"
+                            class="w-full p-5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none transition-all"
+                            placeholder="Paste a suspicious link (e.g. http://paypa1-secure-login.com) or an email body - the agent decides how to analyze it."
+                        ></textarea>
+                        <div class="flex items-center gap-2 mt-3">
+                            <i class="bi bi-info-circle text-purple-400"></i>
+                            <p class="text-sm text-slate-400">
+                                The agent calls the URL classifier, text classifier, and threat-intel knowledge base as needed.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="agentSubmitBtn"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 disabled:opacity-60"
+                    >
+                        <i class="bi bi-robot text-xl"></i>
+                        <span class="text-lg">Run Agent Analysis</span>
+                    </button>
+                </form>
+
+                <div id="agentResult" class="hidden mt-8 bg-slate-900 border border-purple-500/30 rounded-2xl p-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md mx-4 text-center">
+            <div class="relative w-24 h-24 mx-auto mb-6">
+                <div class="absolute inset-0 border-4 border-purple-500/30 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-3 border-4 border-transparent border-t-blue-500 rounded-full animate-spin" style="animation-duration: 1.5s;"></div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-3">Analyzing Content</h3>
+            <p class="text-slate-400 mb-4" id="loadingText">Processing with AI models...</p>
+            <div class="bg-slate-900 rounded-full h-3 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full animate-pulse" style="width: 70%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabType) {
+            const tabs = {
+                email: { card: 'emailCard', content: 'emailContent' },
+                url:   { card: 'urlCard',   content: 'urlContent' },
+                agent: { card: 'agentCard', content: 'agentContent' }
+            };
+            Object.keys(tabs).forEach(function (key) {
+                const card = document.getElementById(tabs[key].card);
+                const content = document.getElementById(tabs[key].content);
+                if (!card || !content) return;
+                if (key === tabType) {
+                    card.classList.add('active', 'pulse-glow');
+                    card.classList.remove('border-slate-700');
+                    content.classList.remove('hidden');
+                } else {
+                    card.classList.remove('active', 'pulse-glow');
+                    card.classList.add('border-slate-700');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function showLoading(type) {
+            const modal = document.getElementById('loadingModal');
+            const loadingText = document.getElementById('loadingText');
+            
+            if (type === 'email') {
+                loadingText.textContent = 'Analyzing email with RoBERTa NLP model...';
+            } else {
+                loadingText.textContent = 'Scanning URL with XGBoost model...';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const emailText = document.getElementById('emailText').value;
+            
+            if (!emailText.trim()) {
+                alert('Please enter email content to analyze');
+                return;
+            }
+            
+            showLoading('email');
+            
+            fetch('/predict-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: emailText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                localStorage.setItem('analysisResult', JSON.stringify(data));
+                localStorage.setItem('analysisType', 'email');
+                localStorage.setItem('analysisContent', emailText);
+                window.location.href = '/results';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during analysis. Please try again.');
+                document.getElementById('loadingModal').classList.add('hidden');
+            });
+        });
+
+        document.getElementById('urlForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const url = document.getElementById('urlInput').value;
+            
+            if (!url.trim()) {
+                alert('Please enter a URL to check');
+                return;
+            }
+            
+            showLoading('url');
+            
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'url=' + encodeURIComponent(url)
+            })
+            .then(response => response.json())
+            .then(data => {
+                localStorage.setItem('analysisResult', JSON.stringify(data));
+                localStorage.setItem('analysisType', 'url');
+                localStorage.setItem('analysisContent', url);
+                window.location.href = '/results';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during analysis. Please try again.');
+                document.getElementById('loadingModal').classList.add('hidden');
+            });
+        });
+
+        document.getElementById('agentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('agentInput').value;
+            if (!input.trim()) {
+                alert('Please paste a URL or email for the agent to analyze');
+                return;
+            }
+            const btn = document.getElementById('agentSubmitBtn');
+            const resultPanel = document.getElementById('agentResult');
+            btn.disabled = true;
+            resultPanel.classList.remove('hidden');
+            resultPanel.innerHTML = '<div class="flex items-center gap-3 text-slate-300"><div class="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div><span>Agent is selecting tools and reasoning... (this can take 10-20s)</span></div>';
+
+            fetch('/agent/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: input })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                btn.disabled = false;
+                renderAgentResult(data);
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                btn.disabled = false;
+                resultPanel.innerHTML = '<p class="text-red-400">An error occurred during agent analysis. Please try again.</p>';
+            });
+        });
+
+        function renderAgentResult(data) {
+            const resultPanel = document.getElementById('agentResult');
+            if (data.error) {
+                resultPanel.innerHTML = '<p class="text-red-400">' + escapeHtmlD(data.error) + '</p>';
+                return;
+            }
+            const toolLabels = {
+                classify_url: '\u{1F517} URL classifier',
+                classify_text: '\u2709\uFE0F Text classifier',
+                search_threat_intel: '\u{1F4DA} Threat-intel KB'
+            };
+            const tools = (data.tools_used || []).map(function (t) {
+                return '<span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-medium border border-purple-500/30">' +
+                    (toolLabels[t] || escapeHtmlD(t)) + '</span>';
+            }).join('');
+            const toolsRow = tools
+                ? '<div class="flex flex-wrap gap-2 mb-4"><span class="text-slate-400 text-xs self-center mr-1">Tools used:</span>' + tools + '</div>'
+                : '<p class="text-slate-500 text-xs mb-4">The agent answered without calling a tool.</p>';
+            resultPanel.innerHTML =
+                '<div class="flex items-center gap-3 mb-4">' +
+                    '<div class="p-2 bg-purple-600 rounded-lg"><i class="bi bi-robot text-white text-xl"></i></div>' +
+                    '<h4 class="text-lg font-bold text-white">Agent Verdict</h4>' +
+                '</div>' +
+                toolsRow +
+                '<p class="text-slate-200 whitespace-pre-wrap">' + escapeHtmlD(data.verdict || '') + '</p>';
+        }
+
+        function escapeHtmlD(text) {
+            const div = document.createElement('div');
+            div.textContent = (text == null) ? '' : text;
+            return div.innerHTML;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const type = urlParams.get('type');
+        if (type === 'url') {
+            switchTab('url');
+        }
+    </script>
+</body>
+</html>

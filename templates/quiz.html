@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Awareness Quiz - AI Phishing Detection System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .quiz-option {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .quiz-option:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+        .progress-bar {
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen">
+    
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 gradient-bg border-r border-slate-700 flex flex-col z-40">
+        <div class="p-6 border-b border-slate-700">
+            <a href="/dashboard" class="flex items-center gap-3 text-white">
+                <div class="p-2 bg-purple-600 rounded-lg">
+                    <i class="bi bi-shield-fill-check text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">PhishSentry</h1>
+                    <p class="text-xs text-slate-400">AI Security</p>
+                </div>
+            </a>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/detection" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-search"></i>
+                <span>Detection</span>
+            </a>
+            <a href="/history" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-clock-history"></i>
+                <span>History</span>
+            </a>
+            <a href="/quiz" class="flex items-center gap-3 px-4 py-3 text-white bg-purple-600 rounded-lg font-medium">
+                <i class="bi bi-question-circle"></i>
+                <span>Quiz</span>
+            </a>
+            <a href="/chatbot" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-chat-dots"></i>
+                <span>Chatbot</span>
+            </a>
+            <a href="/about" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <i class="bi bi-info-circle"></i>
+                <span>About</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {{ user.first_name[0] }}
+                </div>
+                <div class="flex-1">
+                    <p class="text-white font-medium text-sm">{{ user.first_name }}</p>
+                    <p class="text-slate-400 text-xs truncate">{{ user.email }}</p>
+                </div>
+            </div>
+            <a href="/logout" class="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-slate-800 rounded-lg transition-all text-sm">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <div class="bg-slate-800 border-b border-slate-700 px-8 py-4 sticky top-0 z-30">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Phishing Awareness Quiz 🎯</h2>
+                    <p class="text-slate-400 text-sm">Test your knowledge and improve security awareness</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 max-w-5xl mx-auto">
+            
+            <!-- Quiz Introduction -->
+            <div id="quizIntro" class="fade-in">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center">
+                    <div class="relative inline-block mb-8">
+                        <div class="absolute inset-0 bg-orange-500/20 rounded-full blur-xl"></div>
+                        <div class="relative w-24 h-24 bg-gradient-to-br from-orange-600 to-red-600 rounded-full flex items-center justify-center">
+                            <i class="bi bi-patch-question text-white text-4xl"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 class="text-4xl font-black text-white mb-4">Security Knowledge Test</h1>
+                    <p class="text-slate-400 text-lg mb-10">Challenge yourself with AI-generated phishing detection questions</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-6">
+                            <div class="text-4xl font-black text-orange-400 mb-2">5</div>
+                            <div class="text-sm text-orange-300 font-semibold">Questions</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-xl p-6">
+                            <div class="text-4xl font-black text-blue-400 mb-2">~5</div>
+                            <div class="text-sm text-blue-300 font-semibold">Minutes</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-6">
+                            <div class="text-4xl font-black text-purple-400 mb-2">AI</div>
+                            <div class="text-sm text-purple-300 font-semibold">Powered</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6 mb-10 text-left max-w-2xl mx-auto">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="bi bi-lightbulb-fill text-orange-400 text-2xl"></i>
+                            <h4 class="text-orange-300 font-bold text-lg">What You'll Learn</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-orange-200">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-orange-400"></i>
+                                <span class="text-sm">Identify suspicious emails</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-orange-400"></i>
+                                <span class="text-sm">Recognize fake URLs</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-orange-400"></i>
+                                <span class="text-sm">Online security practices</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-orange-400"></i>
+                                <span class="text-sm">Social engineering tactics</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="startQuiz()" class="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-5 px-12 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 text-lg">
+                        <i class="bi bi-play-fill mr-2 text-xl"></i>Start Quiz
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div id="quizContainer" class="hidden fade-in">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8">
+                    <!-- Progress Bar -->
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-300 uppercase tracking-wide">Progress</span>
+                            <span id="questionCounter" class="text-sm font-bold text-purple-400">1 of 5</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-3 border border-slate-700 overflow-hidden">
+                            <div id="progressBar" class="progress-bar bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full" style="width: 20%"></div>
+                        </div>
+                    </div>
+
+                    <div id="questionContent">
+                        <h2 id="questionTitle" class="text-3xl font-bold text-white mb-8 leading-snug"></h2>
+                        
+                        <div id="optionsContainer" class="space-y-4 mb-8">
+                        </div>
+                        
+                        <div class="flex justify-between pt-6 border-t border-slate-700">
+                            <button id="prevBtn" onclick="previousQuestion()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-8 py-3 rounded-xl transition-all hidden flex items-center gap-2">
+                                <i class="bi bi-arrow-left"></i>
+                                <span>Previous</span>
+                            </button>
+                            <button id="nextBtn" onclick="nextQuestion()" class="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold px-8 py-3 rounded-xl transition-all ml-auto flex items-center gap-2 shadow-lg shadow-orange-500/30" disabled>
+                                <span>Next</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                            <button id="submitBtn" onclick="submitQuiz()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-8 py-3 rounded-xl transition-all ml-auto hidden flex items-center gap-2 shadow-lg shadow-green-500/30">
+                                <span>Submit Quiz</span>
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer" class="hidden fade-in">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10">
+                    <div class="text-center mb-10">
+                        <div id="scoreIcon" class="relative inline-block mb-6">
+                        </div>
+                        
+                        <h2 class="text-4xl font-black text-white mb-4">Quiz Complete! 🎉</h2>
+                        <div class="text-7xl font-black mb-4" id="finalScore"></div>
+                        <p id="scoreFeedback" class="text-xl text-slate-400"></p>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-8">
+                        <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                            <i class="bi bi-clipboard-check text-purple-400"></i>
+                            Review Your Answers
+                        </h3>
+                        <div id="answersReview" class="space-y-4"></div>
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <button onclick="retakeQuiz()" class="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            <span>Retake Quiz</span>
+                        </button>
+                        <button onclick="window.location.href='/dashboard'" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-8 py-4 rounded-xl transition-all flex items-center gap-2">
+                            <i class="bi bi-house"></i>
+                            <span>Back to Dashboard</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Modal -->
+            <div id="loadingModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md mx-4 text-center">
+                    <div class="relative w-24 h-24 mx-auto mb-6">
+                        <div class="absolute inset-0 border-4 border-orange-500/30 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin"></div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Generating Quiz</h3>
+                    <p class="text-slate-400">AI is creating personalized questions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let quizData = [];
+        let currentQuestion = 0;
+        let userAnswers = [];
+
+        function startQuiz() {
+            document.getElementById('quizIntro').classList.add('hidden');
+            document.getElementById('loadingModal').classList.remove('hidden');
+            
+            fetch('/generate-quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                quizData = data.questions;
+                document.getElementById('loadingModal').classList.add('hidden');
+                document.getElementById('quizContainer').classList.remove('hidden');
+                displayQuestion(0);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error generating quiz. Please try again.');
+                document.getElementById('loadingModal').classList.add('hidden');
+                document.getElementById('quizIntro').classList.remove('hidden');
+            });
+        }
+
+        function displayQuestion(index) {
+            const question = quizData[index];
+            const questionTitle = document.getElementById('questionTitle');
+            const optionsContainer = document.getElementById('optionsContainer');
+            const questionCounter = document.getElementById('questionCounter');
+            const progressBar = document.getElementById('progressBar');
+            
+            questionTitle.textContent = question.question;
+            questionCounter.textContent = `${index + 1} of ${quizData.length}`;
+            progressBar.style.width = `${((index + 1) / quizData.length) * 100}%`;
+            
+            optionsContainer.innerHTML = '';
+            
+            Object.entries(question.options).forEach(([key, value]) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'quiz-option p-5 border-2 border-slate-700 rounded-xl bg-slate-900/50 hover:bg-slate-900';
+                optionDiv.onclick = () => selectOption(key, optionDiv);
+                
+                optionDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 border-2 border-slate-600 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                            <span class="font-bold text-slate-400 text-lg">${key}</span>
+                        </div>
+                        <span class="text-white text-lg">${value}</span>
+                    </div>
+                `;
+                
+                if (userAnswers[index] === key) {
+                    optionDiv.classList.remove('border-slate-700');
+                    optionDiv.classList.add('border-orange-500', 'bg-orange-500/10');
+                    optionDiv.querySelector('.w-10').classList.remove('border-slate-600');
+                    optionDiv.querySelector('.w-10').classList.add('border-orange-500', 'bg-orange-500');
+                    optionDiv.querySelector('.w-10 span').classList.remove('text-slate-400');
+                    optionDiv.querySelector('.w-10 span').classList.add('text-white');
+                }
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            updateButtons();
+        }
+
+        function selectOption(optionKey, optionElement) {
+            userAnswers[currentQuestion] = optionKey;
+            
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.classList.remove('border-orange-500', 'bg-orange-500/10');
+                option.classList.add('border-slate-700');
+                option.querySelector('.w-10').classList.remove('border-orange-500', 'bg-orange-500');
+                option.querySelector('.w-10').classList.add('border-slate-600');
+                option.querySelector('.w-10 span').classList.remove('text-white');
+                option.querySelector('.w-10 span').classList.add('text-slate-400');
+            });
+            
+            optionElement.classList.remove('border-slate-700');
+            optionElement.classList.add('border-orange-500', 'bg-orange-500/10');
+            optionElement.querySelector('.w-10').classList.remove('border-slate-600');
+            optionElement.querySelector('.w-10').classList.add('border-orange-500', 'bg-orange-500');
+            optionElement.querySelector('.w-10 span').classList.remove('text-slate-400');
+            optionElement.querySelector('.w-10 span').classList.add('text-white');
+            
+            updateButtons();
+        }
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            prevBtn.classList.toggle('hidden', currentQuestion === 0);
+            
+            if (currentQuestion === quizData.length - 1) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+                submitBtn.disabled = !userAnswers[currentQuestion];
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+                nextBtn.disabled = !userAnswers[currentQuestion];
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < quizData.length - 1) {
+                currentQuestion++;
+                displayQuestion(currentQuestion);
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                displayQuestion(currentQuestion);
+            }
+        }
+
+        function submitQuiz() {
+            fetch('/submit-quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: userAnswers,
+                    questions: quizData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showResults(data.score, data.feedback, data.results);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting quiz. Please try again.');
+            });
+        }
+
+        function showResults(score, feedback, results) {
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            
+            const scoreIcon = document.getElementById('scoreIcon');
+            const finalScore = document.getElementById('finalScore');
+            const scoreFeedback = document.getElementById('scoreFeedback');
+            
+            finalScore.textContent = Math.round(score) + '%';
+            scoreFeedback.textContent = feedback;
+            
+            if (score >= 80) {
+                scoreIcon.innerHTML = `
+                    <div class="absolute inset-0 bg-green-500/20 rounded-full blur-xl"></div>
+                    <div class="relative w-24 h-24 bg-gradient-to-br from-green-600 to-emerald-800 rounded-full flex items-center justify-center">
+                        <i class="bi bi-trophy-fill text-white text-4xl"></i>
+                    </div>
+                `;
+                finalScore.className = 'text-7xl font-black mb-4 text-green-400';
+            } else if (score >= 60) {
+                scoreIcon.innerHTML = `
+                    <div class="absolute inset-0 bg-orange-500/20 rounded-full blur-xl"></div>
+                    <div class="relative w-24 h-24 bg-gradient-to-br from-orange-600 to-amber-800 rounded-full flex items-center justify-center">
+                        <i class="bi bi-award-fill text-white text-4xl"></i>
+                    </div>
+                `;
+                finalScore.className = 'text-7xl font-black mb-4 text-orange-400';
+            } else {
+                scoreIcon.innerHTML = `
+                    <div class="absolute inset-0 bg-red-500/20 rounded-full blur-xl"></div>
+                    <div class="relative w-24 h-24 bg-gradient-to-br from-red-600 to-rose-800 rounded-full flex items-center justify-center">
+                        <i class="bi bi-book-fill text-white text-4xl"></i>
+                    </div>
+                `;
+                finalScore.className = 'text-7xl font-black mb-4 text-red-400';
+            }
+            
+            const answersReview = document.getElementById('answersReview');
+            answersReview.innerHTML = '';
+            
+            results.forEach((result, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = `p-5 border-2 rounded-xl ${result.is_correct ? 'border-green-500/30 bg-green-500/10' : 'border-red-500/30 bg-red-500/10'}`;
+                
+                answerDiv.innerHTML = `
+                    <div class="flex items-start justify-between mb-3">
+                        <span class="font-bold text-white">Question ${index + 1}</span>
+                        <span class="${result.is_correct ? 'text-green-400' : 'text-red-400'} font-bold flex items-center gap-2">
+                            <i class="bi bi-${result.is_correct ? 'check-circle-fill' : 'x-circle-fill'}"></i>
+                            ${result.is_correct ? 'Correct' : 'Incorrect'}
+                        </span>
+                    </div>
+                    <p class="text-slate-300 mb-3">${quizData[index].question}</p>
+                    <div class="text-sm space-y-2">
+                        <div>
+                            <span class="text-slate-400">Your answer: </span>
+                            <span class="${result.is_correct ? 'text-green-400' : 'text-red-400'} font-bold">${result.user_answer}</span>
+                        </div>
+                        ${!result.is_correct ? `
+                        <div>
+                            <span class="text-slate-400">Correct answer: </span>
+                            <span class="text-green-400 font-bold">${result.correct_answer}</span>
+                        </div>` : ''}
+                    </div>
+                    <p class="text-sm text-slate-400 mt-3 italic bg-slate-800/50 p-3 rounded-lg">${result.explanation}</p>
+                `;
+                
+                answersReview.appendChild(answerDiv);
+            });
+        }
+
+        function retakeQuiz() {
+            currentQuestion = 0;
+            userAnswers = [];
+            quizData = [];
+            
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('quizIntro').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

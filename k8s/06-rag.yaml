@@ -1,0 +1,86 @@
+# RAG service: pgvector retrieval + BGE embeddings + BGE reranker + grounded
+# cited generation. The ~2.4GB BGE models are BAKED into the image at build time
+# (see the updated Dockerfile.rag), so pods start without re-downloading and
+# need no model PVC — a cleaner K8s story than a shared model cache volume.
+# A startupProbe gives the first model load generous time without loosening the
+# steady-state liveness probe.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag
+  namespace: phishsentry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag
+  template:
+    metadata:
+      labels:
+        app: rag
+    spec:
+      containers:
+        - name: rag
+          image: 192497949426.dkr.ecr.ap-south-1.amazonaws.com/phishsentry-rag:latest
+          ports:
+            - containerPort: 9100
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: phishsentry-secrets
+                  key: DATABASE_URL
+            - name: RAG_EMBED_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: phishsentry-config
+                  key: RAG_EMBED_MODEL
+            - name: RAG_RERANK_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: phishsentry-config
+                  key: RAG_RERANK_MODEL
+            - name: HF_HOME
+              valueFrom:
+                configMapKeyRef:
+                  name: phishsentry-config
+                  key: HF_HOME
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 9100
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 20   # up to ~5 min for first model load into RAM
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9100
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9100
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2.5Gi"
+            limits:
+              memory: "4.5Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag
+  namespace: phishsentry
+spec:
+  selector:
+    app: rag
+  ports:
+    - port: 9100
+      targetPort: 9100

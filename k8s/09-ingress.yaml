@@ -1,0 +1,34 @@
+# Public entry point. The AWS Load Balancer Controller (installed via Helm after
+# the cluster is up, using the IRSA service account from the eksctl config)
+# provisions an internet-facing ALB from this Ingress. TLS terminates at the ALB
+# using an ACM certificate (DNS-validated in Cloudflare). After apply, point the
+# phishsentry.app apex at the ALB's DNS name via Cloudflare CNAME-flattening.
+#
+# Replace arn:aws:acm:ap-south-1:192497949426:certificate/03754ad6-9d64-4ad9-9d86-c821548c45eb with the ARN of the ACM cert for phishsentry.app
+# (must be in ap-south-1, the cluster region).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: phishsentry
+  namespace: phishsentry
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:192497949426:certificate/03754ad6-9d64-4ad9-9d86-c821548c45eb
+    alb.ingress.kubernetes.io/healthcheck-path: /login
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+spec:
+  ingressClassName: alb
+  rules:
+    - host: phishsentry.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  number: 8001

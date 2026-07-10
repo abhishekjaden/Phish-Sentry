@@ -1,0 +1,13 @@
+flask==3.0.3
+numpy==1.26.4
+tensorflow==2.15.0
+torch==2.2.2
+transformers==4.40.2
+onnxruntime==1.18.0
+huggingface-hub==0.23.2
+google-genai==0.8.0
+matplotlib==3.9.0
+requests==2.32.3
+tldextract==5.1.2
+python-whois==0.9.4
+tf-keras
