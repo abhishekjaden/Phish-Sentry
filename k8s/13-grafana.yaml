@@ -6,7 +6,7 @@ metadata:
 type: Opaque
 stringData:
   admin-user: admin
-  admin-password: "falcon17435"   # edit before applying
+  admin-password: "REPLACE_ME_grafana_password"   # edit before applying
 ---
 apiVersion: apps/v1
 kind: Deployment
