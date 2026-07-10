@@ -54,3 +54,8 @@ phishing.db
 
 # Superseded model backups (pre-retrain) — not needed in repo
 models/*_OLD.json
+
+# Personal planning/notes — never commit
+COST_CONTROL.md
+PROJECT_OVERVIEW.md
+PATH_TO_9_plan.md
