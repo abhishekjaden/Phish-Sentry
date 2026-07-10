@@ -51,3 +51,6 @@ url-phishing-ann-cnn*.ipynb
 
 # Local scratch DB
 phishing.db
+
+# Superseded model backups (pre-retrain) — not needed in repo
+models/*_OLD.json
