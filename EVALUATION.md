@@ -1,6 +1,14 @@
 # PhishSentry — Email Model Evaluation Report
 
 **Model under test:** RoBERTa-base sequence classifier, fine-tuned for phishing/spam email detection (the text-analysis model behind PhishSentry's email scan and `/api/predict/text`).
+
+> **Current production model: v3 (see the "Update - v3" section below).**
+> This report is written as a full history. The evaluations proceed v1 -> v2 -> v3;
+> **only v3 is the deployed model.** The v1 and v2 sections are retained because
+> the failures they document are what drove each subsequent retrain, and the
+> methodology hardened in response to each miss. If you only read one section,
+> read **Update - v3**. v3 out-of-distribution claims are reproducible locally via
+> `evaluate_model_v3.py`.
 **Decision rule (production):** `phishing` if `P(class=phishing) > 0.5`, on text preprocessed and truncated to 256 tokens — identical to the deployed `inference_service.py` path.
 **Method:** evaluated locally against the exact deployed weights, with two test sets (below). Reproducible via `evaluate_model.py` in this repository.
 
@@ -109,10 +117,16 @@ That before/after comparison — measured, not asserted — would be the honest 
 
 ---
 
-*Reproducibility: all numbers above are produced by `evaluate_model.py` in this repository, run against the deployed model weights. The script reconstructs the held-out split deterministically and prints the per-email table and bucket rates verbatim.*
+*Reproducibility (email model): the v1 held-out split and v1/v2 gold-set numbers are produced by `evaluate_model.py` against the weights that were deployed at the time. The **v3** out-of-distribution gate and v2 regression probe are reproduced by `evaluate_model_v3.py` against the current production weights and preprocessing. The v3 in-distribution held-out metrics come from the v3 training run (`phishsentry_email_retrain_v3.ipynb`) and are not reproduced by the local script, which does not carry the 160k-email multi-corpus split.*
 ---
 
 ## Update — Email model retrain (v2): fixing the modern-mail false-positive rate
+
+> ⚠️ **Superseded by v3.** The v2 model described in this section was later found
+> to flag ~50% of legitimate *transactional* email as phishing - a failure its
+> (security-notification-only) test set did not surface. See "Update - v3" below
+> for the resolution. This section is kept as the historical record of the second
+> iteration.
 
 ### What the first evaluation found
 
@@ -179,6 +193,120 @@ spam at >99% precision and recall.
   identified failure — rather than modern-spam recall.
 - The improvement is a measured *reduction*, achieved by addressing the
   underlying distribution shift with data, not by threshold manipulation.
+---
+
+## Update - Email model retrain (v3): fixing the transactional-mail false positives that v2 introduced
+
+> **Read this before trusting the v2 numbers above.** The v2 results (0/18 false
+> positives) were measured on a gold set composed almost entirely of *security
+> notifications* (sign-in alerts, passkey confirmations, device verification).
+> That set did **not** contain *transactional/commercial* legitimate mail - order
+> confirmations, receipts, shipping notices, account statements, subscription
+> renewals. Broader testing showed that v2, while it fixed the
+> security-notification problem, had **overcorrected**: it flagged roughly
+> **50% of legitimate transactional email as phishing**. The v2 evaluation missed
+> this because its test set did not cover that category. **v3 is the model that
+> actually resolves it, and it is the current production model.**
+
+### What v2's evaluation missed
+
+Testing v2 on a broader legitimate set exposed a systematic failure on
+transactional mail (all messages below are genuinely legitimate; any "phishing"
+verdict is a false positive):
+
+| Legitimate email (v2 model) | P(phishing) | Verdict |
+|---|---:|---|
+| "Your order #29481 has shipped, arrives Thursday" | 0.963 | **false positive** |
+| "Thanks for your purchase! Receipt attached" | 1.000 | **false positive** |
+| "Your Amazon package was delivered" | 1.000 | **false positive** |
+| "Your monthly statement is now available" | 1.000 | **false positive** |
+| "Your subscription renews on the 15th" | 1.000 | **false positive** |
+| Personal/work mail (standup notes, 1:1 reminder) | 0.000 | correct |
+
+**5 of 10 legitimate emails flagged (50%).** Root cause: phishing corpora are
+saturated with *fake* transactional lures ("your order shipped - click to
+track", "confirm your payment"), while v2's legitimate class was dominated by
+older personal/business mail with little modern transactional content. The model
+learned **"transactional vocabulary -> phishing."** It could not distinguish a
+real order confirmation from a phishing one - it keyed on the vocabulary, not the
+intent. This is the mirror image of the v1 failure: v1 called everything
+legitimate on out-of-distribution mail; v2 called legitimate transactional mail
+phishing.
+
+### The v3 fix
+
+The remedy was a proper multi-corpus retrain with an explicit anti-false-positive
+design and a hard validation gate:
+
+- **Real, diverse training data** - a multi-corpus phishing dataset (Nazario
+  real-phishing, Nigerian/419 fraud, CEAS-08, SpamAssassin, Enron ham, Ling),
+  ~160,000 emails, balanced ~50/50 phishing/legitimate. This replaced the single
+  legacy spam corpus, giving the model *real modern phishing* to learn from
+  rather than 2000s marketing spam.
+- **Format normalization** - strip `Subject:` prefixes and HTML, replace URLs
+  with a neutral `httpaddr` token - so the model learns content, not
+  dataset-specific formatting artifacts. The production `inference_service.py`
+  preprocessing was updated to match this normalization exactly, closing a
+  train/serve skew.
+- **Legit-transactional representation** - oversampled the hand-labeled modern
+  legitimate emails x15, and added 600 curated realistic legitimate transactional
+  templates (order shipped, receipt, statement, subscription, refund, booking,
+  flight) - directly teaching the model that transactional language is *not*
+  inherently phishing.
+- **Class-weighted loss** to prevent collapse toward either class.
+- **A strict validation gate:** the model is saved only if it catches **>=90% of a
+  novel out-of-distribution phishing set AND passes >=90% of a diverse legitimate
+  set that explicitly includes transactional mail.** This gate exists precisely
+  because the v1 and v2 evaluations had each missed a failure category.
+
+### Results (v3 - current production model)
+
+**Out-of-distribution validation gate** (none of these appear in any training
+set), reproducible locally via `evaluate_model_v3.py`:
+
+| Set | Result |
+|---|---|
+| Novel phishing (credential-harvest, fraud, fake-transactional lures) | **7/7 caught (100%)** |
+| Diverse legitimate - personal, work, **and transactional** (orders, receipts, statements, subscriptions, refunds, flights) | **12/12 passed (100%)**, all transactional at ~0.000 |
+| v2 transactional regression probe (the exact emails that broke v2) | **5/5 passed** |
+
+**Held-out split (in-distribution, multi-corpus test set)** - from the v3
+training run (`phishsentry_email_retrain_v3.ipynb`; not reproduced by the local
+script): Accuracy 0.9969, Precision 0.9965, Recall 0.9973, F1 0.9969.
+
+**Live-UI spot check (real inbox mail, through the deployed site):** real
+legitimate mail - a Volante internship offer, an FIE 2026 camera-ready notice, a
+Bluestock congratulations - all correctly classified **legitimate**; an
+unambiguous phishing email correctly flagged **phishing at 100%**. The specific
+transactional case that broke v2 ("Amazon order shipped") returns **legitimate
+(P(phishing) ~ 0.00002)** through the production endpoint.
+
+### The honest meta-lesson
+
+Each iteration's evaluation was only as good as its test set's coverage:
+
+- **v1** - eval missed modern *security-notification* mail -> 81.8% FP discovered.
+- **v2** - eval missed modern *transactional/commercial* mail -> 50% FP discovered.
+- **v3** - added an explicit validation gate covering *both* categories, and will
+  not save a model that fails either.
+
+The value here is not that the final model is flawless - it is that each failure
+mode was found, measured, and closed rather than asserted away, and that the
+evaluation methodology itself was hardened in response to each miss.
+
+### Remaining honest limitations (v3)
+
+- The out-of-distribution validation sets are modest (single- to low-double-digit
+  counts per category). They demonstrate the specific failure modes are closed,
+  not that the false-positive rate is globally zero.
+- v3 is deliberately **aggressive on genuinely ambiguous transactional-phishing
+  lures** (e.g. "your parcel couldn't be delivered - pay a customs fee"), which it
+  flags as phishing. For a security tool this is arguably the correct bias, but a
+  legitimate email that closely mimics a known lure structure could occasionally
+  be flagged.
+- Modern-spam recall is validated primarily through the phishing corpora; the
+  hand-labeled modern-spam sample remains small.
+
 ---
 
 ## URL model (XGBoost) evaluation

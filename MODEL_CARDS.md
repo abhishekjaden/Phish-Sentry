@@ -12,9 +12,15 @@ card convention (Mitchell et al., 2019).
 - **Architecture:** `roberta-base` fine-tuned for binary sequence classification
   (legitimate vs. phishing/spam).
 - **Framework:** PyTorch / HuggingFace Transformers.
-- **Input:** raw email text (subject + body), truncated to 256 tokens.
+- **Input:** raw email text (subject + body). Normalized before inference
+  (strip `Subject:`/HTML, URLs -> `httpaddr`, collapse whitespace) to match the
+  training distribution, then truncated to 256 tokens. Production preprocessing
+  in `inference_service.py` matches this normalization exactly.
 - **Output:** phishing probability in [0, 1]; threshold 0.5.
-- **Version:** v2 (retrained). v1 was trained on a 2000s-era spam corpus only.
+- **Version:** v3 (current production). v1 was trained on a 2000s-era spam corpus
+  only; v2 added modern legitimate security mail but over-corrected into flagging
+  legitimate *transactional* email; v3 fixes both on a real multi-corpus dataset.
+  See EVALUATION.md ("Update - v3") for the full history.
 
 ## Intended use
 - **Primary:** flag phishing/spam content in email text and provide a
@@ -26,28 +32,45 @@ card convention (Mitchell et al., 2019).
   detecting malware attachments (text-only).
 
 ## Training data
-- Original corpus (~5,700 emails, 2000s-era spam/ham) **plus** ~700 modern
-  emails collected from a real inbox (Google Takeout), locally parsed and
-  anonymized (addresses, numbers, names redacted), and hand-labeled
-  (683 legitimate / 13 spam / 14 skipped). Combined pool ~6,400 after dedup.
-- The modern data was added specifically to correct distribution shift (see
-  Limitations).
+- **v3 (current):** a balanced multi-corpus dataset (~160,000 emails, ~50/50
+  phishing/legitimate) combining real modern phishing (Nazario, Nigerian/419
+  fraud, CEAS-08) and real legitimate mail (SpamAssassin ham, Enron ham, Ling),
+  **plus** ~700 hand-labeled modern emails from a real inbox (Google Takeout;
+  locally parsed and anonymized) oversampled x15, **plus** 600 curated realistic
+  legitimate transactional templates (orders, receipts, statements,
+  subscriptions, refunds, bookings). Text is format-normalized before training.
+- The transactional templates and oversampling were added specifically to teach
+  the model that transactional language is not inherently phishing - the failure
+  mode that v2 exhibited (see Limitations / EVALUATION.md).
+- *(v1 used only a ~5,700-email 2000s spam corpus; v2 added ~700 modern emails to
+  a mostly-legacy pool. Both are documented in EVALUATION.md.)*
 
 ## Performance
-- **Held-out test set (n = 570):** accuracy 0.997, precision 0.993,
-  recall 0.993, F1 0.993 (TN 432, FP 1, FN 1, TP 136).
-- **Independent gold set** of 11 hand-collected modern security emails that the
-  v1 model false-flagged (81.8% FP): retrained model produces **0/11 false
-  positives**, scoring them 0.001–0.004 (was 0.88–0.9997).
-- **Held-out modern emails (n = 137):** 0 false positives.
+- **Held-out test (in-distribution, multi-corpus split, v3):** accuracy 0.9969,
+  precision 0.9965, recall 0.9973, F1 0.9969. (From the v3 training run.)
+- **Out-of-distribution validation gate (v3):** 7/7 novel phishing caught;
+  12/12 diverse legitimate passed, *including* transactional mail (orders,
+  receipts, statements, subscriptions, refunds, flights), all at ~0.000.
+  Reproducible via `evaluate_model_v3.py`.
+- **v2 regression probe (v3):** the exact transactional emails that v2 flagged
+  as phishing (~50% FP) all pass under v3 (5/5, ~0.000).
+- **Live-UI spot check:** real inbox mail (internship offer, conference notice,
+  congratulations) classified legitimate; unambiguous phishing flagged at 100%.
 
 ## Limitations
-- The gold set is small (11 emails); the correct claim is "0 false positives on
-  the emails that previously failed," not a globally-zero rate.
-- Modern-spam sample is small (13); the evaluation primarily validates the
-  legitimate-mail false-positive fix, not modern-spam recall.
+- The out-of-distribution validation sets are modest (single- to low-double-digit
+  per category). They show the specific failure modes are closed, not that the
+  false-positive rate is globally zero.
+- v3 is deliberately aggressive on genuinely ambiguous transactional-phishing
+  lures (e.g. "parcel undelivered - pay a customs fee"), which it flags as
+  phishing. Arguably the correct bias for a security tool, but a legitimate email
+  closely mimicking a known lure structure could occasionally be flagged.
+- Modern-spam recall is validated mainly via the phishing corpora; the
+  hand-labeled modern-spam sample remains small.
 - English-only; text-only (no attachment/header/link analysis in this model).
-- A novel sender style absent from training could still be misclassified.
+- **Evaluation history (honest):** v1's test set missed modern security mail
+  (81.8% FP found); v2's missed transactional mail (50% FP found); v3 added an
+  explicit gate covering both. Each fix was measured, not asserted.
 
 ## Ethical considerations
 - Training data came from a personal inbox; it was anonymized locally and never

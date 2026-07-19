@@ -33,12 +33,21 @@ honestly — including finding and fixing real-world failure modes, and measurin
 ## Evaluation (the core of this project)
 
 ### Email model (RoBERTa)
-- **Held-out test (n = 570):** accuracy 0.997, precision 0.993
-  (95% CI [0.977, 1.000]), recall 0.993 (95% CI [0.976, 1.000]).
-- **The retrain story:** the original model (trained on a 2000s-era spam corpus)
-  false-flagged modern legitimate security email — 81.8% false positives on a
-  gold set of 11 real modern security emails. After retraining on ~700 modern
-  labeled emails, this dropped to **0/11**, while spam detection was preserved.
+- **Held-out test (in-distribution, multi-corpus split):** accuracy 0.997,
+  precision 0.997, recall 0.997, F1 0.997.
+- **Out-of-distribution gate:** 7/7 novel phishing caught; 12/12 diverse
+  legitimate passed, including transactional mail (orders, receipts, statements,
+  subscriptions). Reproducible via `evaluate_model_v3.py`.
+- **The retrain story (three iterations, honestly):** the original model, trained
+  on a 2000s-era spam corpus, missed modern phishing and false-flagged modern
+  legitimate security email (81.8% FP). A first retrain fixed that but
+  over-corrected - flagging ~50% of legitimate *transactional* email (order
+  confirmations, receipts) as phishing. A second retrain on a real, balanced
+  multi-corpus dataset - with format normalization, oversampled legitimate
+  transactional mail, and a strict validation gate - resolved both: it catches
+  novel phishing and passes legitimate transactional email. The value is that
+  each failure mode was found, measured, and closed rather than hidden. Full
+  history in [EVALUATION.md](EVALUATION.md).
 
 ### URL model (XGBoost)
 - **Held-out test (n = 17,730):** precision 0.956 (95% CI [0.951, 0.961]),
@@ -52,7 +61,9 @@ honestly — including finding and fixing real-world failure modes, and measurin
   full model check. It is reported here as a measured residual, not hidden.
 
 Full details in [EVALUATION.md](EVALUATION.md) and [MODEL_CARDS.md](MODEL_CARDS.md).
-Reproduce with `evaluate_model.py` (email) and `evaluate_url_model.py` (URL).
+Reproduce with `evaluate_model_v3.py` (email, current model - out-of-distribution
+gate + transactional regression probe) and `evaluate_url_model.py` (URL).
+`evaluate_model.py` reproduces the earlier v1/v2 email evaluations.
 
 ---
 
@@ -97,7 +108,8 @@ inference_service.py    FastAPI model-serving (RoBERTa + XGBoost + SHAP)
 rag_service.py          FastAPI RAG chatbot (Gemini + pgvector)
 url_features.py         20-feature URL extractor (live WHOIS/DNS/ASN/HTTP)
 database.py             SQLAlchemy models + queries
-evaluate_model.py       Email model evaluation (with bootstrap CIs)
+evaluate_model_v3.py    Email model evaluation (current v3 - OOD gate + probe)
+evaluate_model.py       Earlier email evaluation (v1/v2 held-out + gold set)
 evaluate_url_model.py   URL model evaluation (CIs, deep-link characterization,
                         baseline comparison)
 EVALUATION.md           Full evaluation report
@@ -108,8 +120,8 @@ templates/              Web UI templates
 ```
 
 **Model weights:** the URL XGBoost model is included (small JSON). The email
-RoBERTa weights (~476MB) exceed GitHub's file limit and are available on request
-/ via HuggingFace.
+RoBERTa weights (~476MB, current v3 model) exceed GitHub's file limit and are
+available on request / via HuggingFace.
 
 ---
 
