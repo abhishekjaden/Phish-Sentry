@@ -59,3 +59,17 @@ models/*_OLD.json
 COST_CONTROL.md
 PROJECT_OVERVIEW.md
 PATH_TO_9_plan.md
+
+# --- added 2026-07-25 ---
+kaggle*.json
+*.pth
+build_lambda/
+lookalike_lambda.zip
+recording/
+url_dataset_v2_*.csv
+legit_deep_urls.txt
+*.bak
+*.bak[0-9]
+*.shapbak*
+*.v41bak
+out[0-9].json
