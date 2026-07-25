@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy - PhishSentry Lookalike Domain Checker</title>
+<style>
+body{max-width:44rem;margin:2rem auto;padding:0 1.25rem;
+font:16px/1.65 -apple-system,Segoe UI,Roboto,sans-serif;color:#1f2937}
+h1{font-size:1.6rem} h2{margin-top:2rem;font-size:1.2rem}
+code{background:#f3f4f6;padding:.1rem .3rem;border-radius:3px;font-size:.9em}
+table{border-collapse:collapse} td,th{border:1px solid #d1d5db;padding:.4rem .6rem}
+a{color:#1d4ed8}
+</style></head><body>
+<h1>Privacy Policy — PhishSentry Lookalike Domain Checker</h1>
+<p><strong>Last updated:</strong> 25 July 2026 <strong>Extension version:</strong> 2.0.0</p>
+<h2>Summary</h2>
+<p>The extension checks whether the domain you are visiting imitates a known brand. To do that it sends <strong>the hostname only</strong> to a checking service. It does not send the page path, query string, or page content. Nothing is stored on the server. There are no accounts, no analytics, and no third parties.</p>
+<h2>What is transmitted</h2>
+<p>When you visit a page, or press <strong>Check this page</strong>, the extension may send a single piece of information to its checking endpoint:</p>
+<ul><li><strong>The hostname of the site</strong>, for example <code>example-login.com</code>.</li></ul>
+<p>It does <strong>not</strong> transmit:</p>
+<ul><li>the full URL, the path, the query string, or the URL fragment</li>
+<li>page content, form fields, cookies, or anything you type</li>
+<li>your IP address beyond what any ordinary HTTPS request necessarily reveals to</li>
+  the receiving server
+<li>any identifier for you, your browser, or your installation</li></ul>
+<p>Requests carry no user ID, no device ID, and no session token. Requests from different users are indistinguishable from one another apart from network-level metadata.</p>
+<h3>Domains that are never transmitted</h3>
+<p>The extension ships with a built-in list of widely-used domains (search engines, major cloud and developer platforms, banks, universities, news sites, and similar). Pages on those domains are resolved **entirely inside your browser<strong> and their hostnames are </strong>never sent anywhere at all**. In ordinary browsing this means most of the sites you visit never leave your device.</p>
+<p>You can read the exact list in <code>background.js</code> in the public source repository.</p>
+<h2>What is stored</h2>
+<p><strong>On the server: nothing.</strong> The checking service is stateless. It holds no database and writes no records of the hostnames it receives. Its logs record only the verdict (whether a lookalike pattern matched) and which rule matched. Hostnames are deliberately excluded from those logs.</p>
+<p><strong>In your browser:</strong> the extension caches verdicts for hostnames you have visited, in Chrome's local extension storage, so repeated visits do not need a repeated request. This cache holds at most 300 entries, expires after 30 minutes per entry, never leaves your device, and is deleted when you remove the extension. You can clear it at any time by removing and reinstalling the extension.</p>
+<h2>What is not done with your data</h2>
+<ul><li>Data is <strong>not sold</strong> to anyone, and is not transferred to any third party.</li>
+<li>Data is <strong>not used</strong> for advertising, profiling, tracking, or any purpose</li>
+  other than answering the single question "does this domain imitate a known
+  brand?"
+<li>Data is <strong>not used</strong> to determine creditworthiness or for lending decisions.</li>
+<li>There is <strong>no analytics SDK</strong>, no telemetry, and no error-reporting service.</li></ul>
+<h2>Permissions, and why each is needed</h2>
+<ul><li><strong><code>tabs</code></strong> — to read the address of the tab you are viewing, so its domain can</li>
+  be checked. Used for the domain only.
+<li><strong><code>storage</code></strong> — to keep the local verdict cache described above.</li>
+<li><strong><code>notifications</code></strong> — to show a desktop notification when a domain appears to</li>
+  imitate a brand.
+<li><strong>Content script on all pages</strong> — to display a dismissible warning banner</li>
+  inside a page whose domain looks like an imitation. The script only draws that
+  banner. It does not read page content, form data, or anything you type.
+<li><strong>Host access to the checking endpoint</strong> — the extension can make requests to</li>
+  its own checking endpoint and to no other server.</ul>
+<h2>What this extension does not do</h2>
+<p>It checks domain names for imitation patterns. It does <strong>not</strong> detect phishing hosted on a legitimate platform under an unrelated subdomain (for example, a credential form hosted at a random subdomain of a free hosting provider), and it does not inspect page content. It is not a replacement for Google Safe Browsing, antivirus software, or your own judgement. Measured performance figures and known limitations are published in <code>EVALUATION.md</code> in the source repository.</p>
+<h2>Source code</h2>
+<p>The extension and the checking service are open source and can be audited: <a href="https://github.com/abhishekjaden/Phish-Sentry">https://github.com/abhishekjaden/Phish-Sentry</a></p>
+<p>If this policy and the code ever disagree, the code is the authority — please open an issue and the policy will be corrected.</p>
+<h2>Changes to this policy</h2>
+<p>Material changes will be accompanied by a version increment here and in the extension. The extension will not begin collecting a new category of data without this policy being updated first.</p>
+<h2>Contact</h2>
+<p>Abhishek Jaden — via the GitHub repository above.</p>
+</body></html>
