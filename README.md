@@ -33,25 +33,40 @@ honestly — including finding and fixing real-world failure modes, and measurin
 ## Evaluation (the core of this project)
 
 ### Email model (RoBERTa)
-- **Held-out test (in-distribution, multi-corpus split):** accuracy 0.997,
-  precision 0.997, recall 0.997, F1 0.997.
-- **Out-of-distribution gate:** 7/7 novel phishing caught; 12/12 diverse
-  legitimate passed, including transactional mail (orders, receipts, statements,
-  subscriptions). Reproducible via `evaluate_model_v3.py`.
-- **The retrain story (three iterations, honestly):** the original model, trained
+- **Held-out test (in-distribution):** accuracy 0.996, F1 0.997.
+- **Out-of-distribution evaluation (n=150 per category):** phishing recall
+  **87.3%** mean (overt 92.7%, subtle/BEC 82.0%); legitimate mail passed **92.2%**
+  mean. Reproducible via `eval_email_models.py`, which scores the current model
+  and its predecessor on the same corpus.
+- **Known weakness, stated plainly:** ~18% of legitimate *security
+  notifications* (2FA codes, password resets, new-device alerts) are flagged as
+  phishing. This is unresolved and is the most significant open problem in the
+  email model.
+- **The retrain story (four iterations, honestly):** the original model, trained
   on a 2000s-era spam corpus, missed modern phishing and false-flagged modern
   legitimate security email (81.8% FP). A first retrain fixed that but
   over-corrected - flagging ~50% of legitimate *transactional* email (order
   confirmations, receipts) as phishing. A second retrain on a real, balanced
   multi-corpus dataset - with format normalization, oversampled legitimate
   transactional mail, and a strict validation gate - resolved both: it catches
-  novel phishing and passes legitimate transactional email. The value is that
-  each failure mode was found, measured, and closed rather than hidden. Full
+  novel phishing and passes legitimate transactional email. A fourth iteration
+  followed after broader measurement (n=150 per category rather than 12) showed
+  the third model caught only ~25% of business-email-compromise phishing --
+  a failure the small validation gate could not detect. The value is that each
+  failure mode was found, measured, and closed rather than hidden; and that the
+  measurement apparatus itself needed correcting three times along the way. Full
   history in [EVALUATION.md](EVALUATION.md).
 
 ### URL model (XGBoost)
-- **Held-out test (n = 17,730):** precision 0.956 (95% CI [0.951, 0.961]),
-  recall 0.963 (95% CI [0.958, 0.968]), ROC-AUC 0.996.
+- **Held-out test (n = 17,730):** precision 0.956, recall 0.963, ROC-AUC 0.996 --
+  but these are **in-distribution** figures. Measured against live phishing feeds,
+  recall is **38.3%**. The gap is blindness to phishing hosted on legitimate
+  platforms (`*.pages.dev`, `*.blogspot.com`), where every feature the model
+  consumes reports benign. Four measured iterations established this as a
+  representational ceiling rather than a tuning problem.
+- **The browser extension therefore ships a deterministic rule-based lookalike
+  detector, not this model** -- 98.0% typosquat recall with structurally zero
+  false positives on genuine brand domains. See EVALUATION.md.
 - **Modern legitimate URLs (n = 276):** 0.4% false positives.
 - **Baseline:** +23.8 F1 points over a naive length/age heuristic.
 - **Documented limitation (measured):** the model false-flags deep links (long,
@@ -61,9 +76,11 @@ honestly — including finding and fixing real-world failure modes, and measurin
   full model check. It is reported here as a measured residual, not hidden.
 
 Full details in [EVALUATION.md](EVALUATION.md) and [MODEL_CARDS.md](MODEL_CARDS.md).
-Reproduce with `evaluate_model_v3.py` (email, current model - out-of-distribution
-gate + transactional regression probe) and `evaluate_url_model.py` (URL).
-`evaluate_model.py` reproduces the earlier v1/v2 email evaluations.
+Reproduce with `eval_email_models.py` (email, current model vs predecessor),
+`measure_url_recall.py` (URL model on live phishing) and
+`eval_lookalike_detector.py` (the rule-based detector the extension ships).
+Earlier scripts (`evaluate_model_v3.py`, `evaluate_model.py`) are retained as
+history; their gates were too small to support the claims made from them.
 
 ---
 

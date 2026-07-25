@@ -187,6 +187,26 @@ def call_inference_text(text):
         logger.error("inference_call_failed", service="text", error=str(e))
         return {"error": "Detection service unavailable. Please try again."}
 
+def call_inference_explain(text):
+    """Fetch SHAP word attributions from the inference service.
+    Best-effort: returns {} on any error/timeout so it never breaks a prediction."""
+    try:
+        resp = http_requests.post(
+            f"{INFERENCE_URL}/explain/text",
+            json={"text": text},
+            timeout=20,
+        )
+        data = resp.json()
+        if isinstance(data, dict) and data.get("status") == "success":
+            return {
+                "top_risky_words": data.get("top_risky_words", []),
+                "top_safe_words": data.get("top_safe_words", []),
+            }
+    except Exception as _e:
+        pass
+    return {}
+
+
 def call_inference_url(url):
     """Call the inference microservice for URL prediction."""
     try:
@@ -486,6 +506,10 @@ def predict_text():
         return jsonify({'error': error}), 400
 
     result = call_inference_text(text)
+    # Best-effort SHAP overlay: merge word attributions into the result.
+    # If SHAP is slow or fails, the prediction still returns unaffected.
+    if isinstance(result, dict) and 'error' not in result:
+        result.update(call_inference_explain(text))
     _autosave_scan(session.get('user_id'), 'email', text, result, source='web')
     return jsonify(result)
 @app.route('/explain-text', methods=['POST'])

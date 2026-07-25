@@ -59,13 +59,18 @@ except Exception as e:
 
 
 def preprocess_email_text(text):
-    text = str(text).lower()
-    text = re.sub(r'<[^>]+>', '', text)
-    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
-    text = re.sub(r'\S+@\S+', '', text)
-    text = re.sub(r'[^\w\s.!?,-]', ' ', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
+    # NOTE: must match the normalization used during model training
+    # (strip Subject: prefix + HTML, replace URLs with httpaddr, collapse whitespace).
+    # Do NOT lowercase and do NOT delete URLs/punctuation, or the model sees
+    # a different distribution than it was trained on.
+    import html as _html
+    t = _html.unescape(str(text))
+    if '<' in t and '>' in t:
+        t = re.sub(r'<[^>]+>', ' ', t)
+    t = re.sub(r'^\s*subject\s*:\s*', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'https?://\S+|www\.\S+', ' httpaddr ', t)
+    t = re.sub(r'\s+', ' ', t)
+    return t.strip()[:5000]
 
 
 # ---- SHAP explainer for the text model ----
@@ -73,7 +78,9 @@ def preprocess_email_text(text):
 _text_explainer = None
 
 def get_text_explainer():
-    """Build (once) and return a SHAP explainer wrapping the RoBERTa model."""
+    """Build (once) and return a SHAP explainer wrapping the RoBERTa model.
+    model_predict is BATCHED (one forward pass over all perturbations) so SHAP
+    is fast enough for interactive use."""
     global _text_explainer
     if _text_explainer is not None:
         return _text_explainer
@@ -81,57 +88,111 @@ def get_text_explainer():
         return None
 
     def model_predict(texts):
-        # texts: list of strings -> array of phishing probabilities
+        # texts: list/array of strings -> array of phishing probabilities.
+        # BATCHED: tokenize all at once and run a single forward pass (chunked),
+        # instead of a Python loop of one-at-a-time full-length passes.
         import numpy as _np
-        results = []
-        for t in texts:
+        texts = [str(t) for t in texts]
+        out_probs = []
+        BATCH = 32
+        for i in range(0, len(texts), BATCH):
+            chunk = texts[i:i + BATCH]
             enc = email_tokenizer(
-                t, truncation=True, padding='max_length',
-                max_length=256, return_tensors='pt'
+                chunk, truncation=True, padding=True,
+                max_length=64, return_tensors='pt'
             )
             with torch.no_grad():
                 input_ids = enc['input_ids'].to(device)
                 attention_mask = enc['attention_mask'].to(device)
-                out = email_model(input_ids=input_ids, attention_mask=attention_mask)
-                probs = torch.softmax(out.logits, dim=1).cpu().numpy()[0]
-            results.append(probs[1])  # phishing probability
-        return _np.array(results)
+                logits = email_model(input_ids=input_ids,
+                                     attention_mask=attention_mask).logits
+                probs = torch.softmax(logits, dim=1).cpu().numpy()[:, 1]
+            out_probs.extend(probs.tolist())
+        return _np.array(out_probs)
 
-    # Use SHAP's text masker with the tokenizer
     masker = shap.maskers.Text(email_tokenizer)
     _text_explainer = shap.Explainer(model_predict, masker)
     return _text_explainer
 
 
+def _clean_tok(tok):
+    """Strip RoBERTa's space marker and whitespace so words render cleanly."""
+    return str(tok).replace("\u0120", "").replace("Ġ", "").strip()
+
+
+def _is_real_word(w):
+    """Keep only clean, meaningful words for display. Drops mangled-unicode
+    tokens, pure numbers, and short sub-word fragments that read as noise."""
+    if not w or len(w) < 3:
+        return False
+    # must be mostly ASCII letters (drops mangled unicode like 'âĢĵ')
+    if not all(ord(c) < 128 for c in w):
+        return False
+    # drop pure numbers / tokens with no alphabetic content
+    if not any(c.isalpha() for c in w):
+        return False
+    # drop all-caps sub-word fragments of <=3 chars (e.g. 'ENT', 'UR')
+    if len(w) <= 3 and w.isupper():
+        return False
+    return True
+
+
 def compute_text_shap(text, max_words=20):
-    """Compute real token-level SHAP values for a piece of text."""
+    """Compute token-level SHAP values, fast, in the shape the frontend reads.
+
+    Returns top_risky_words / top_safe_words as [word, value] pairs (what
+    results.html expects), plus legacy risky_tokens/safe_tokens for compat.
+    """
     explainer = get_text_explainer()
     if explainer is None:
         return {"error": "Explainer not available"}
 
     processed = preprocess_email_text(text)
-    # Limit length to keep SHAP tractable (it's expensive)
     words = processed.split()
     if len(words) > max_words:
         processed = " ".join(words[:max_words])
 
     try:
-        shap_values = explainer([processed])
+        # max_evals=80: balanced quality/speed (~10-12s on CPU).
+        shap_values = explainer([processed], max_evals=80)
         tokens = shap_values.data[0]
         values = shap_values.values[0]
 
         token_scores = []
         for tok, val in zip(tokens, values):
-            tok_clean = str(tok).strip()
-            if tok_clean:
-                token_scores.append({"token": tok_clean, "shap_value": float(val)})
+            w = _clean_tok(tok)
+            if _is_real_word(w):
+                token_scores.append((w, float(val)))
 
-        risky = sorted([t for t in token_scores if t["shap_value"] > 0],
-                       key=lambda x: x["shap_value"], reverse=True)[:10]
-        safe = sorted([t for t in token_scores if t["shap_value"] < 0],
-                      key=lambda x: x["shap_value"])[:10]
+        risky_pairs = sorted([t for t in token_scores if t[1] > 0],
+                             key=lambda x: x[1], reverse=True)[:5]
+        safe_pairs = sorted([t for t in token_scores if t[1] < 0],
+                            key=lambda x: x[1])[:5]
 
-        return {"status": "success", "risky_tokens": risky, "safe_tokens": safe}
+        # Normalize to relative importance (0-100) for meaningful display.
+        # Raw SHAP magnitudes are tiny (model is very confident), so we scale
+        # each side against its own max |value|. This is the true relative
+        # ranking, just rescaled for readability -- not a fabricated number.
+        max_risky = max([v for (_, v) in risky_pairs], default=0.0)
+        max_safe = max([abs(v) for (_, v) in safe_pairs], default=0.0)
+
+        def rel(v, m):
+            return round(100.0 * abs(v) / m, 1) if m > 0 else 0.0
+
+        # frontend reads [word, value]; we make value the 0-100 relative weight
+        # (results.html shows this directly), and keep the raw value separately.
+        top_risky = [[w, rel(v, max_risky)] for (w, v) in risky_pairs]
+        top_safe = [[w, rel(v, max_safe)] for (w, v) in safe_pairs]
+
+        return {
+            "status": "success",
+            # frontend-shaped ([word, relative_importance_0_100] pairs):
+            "top_risky_words": top_risky,
+            "top_safe_words": top_safe,
+            # raw SHAP values kept for transparency / compat:
+            "risky_tokens": [{"token": w, "shap_value": v} for (w, v) in risky_pairs],
+            "safe_tokens": [{"token": w, "shap_value": v} for (w, v) in safe_pairs],
+        }
     except Exception as e:
         return {"error": f"SHAP computation failed: {str(e)}"}
 

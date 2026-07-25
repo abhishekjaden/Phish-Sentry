@@ -1,0 +1,25 @@
+# PhishSentry public URL-check Lambda (container image).
+# Container image rather than a zip because the Linux xgboost wheel alone
+# exceeds Lambda's 250MB unzipped layer limit.
+
+FROM public.ecr.aws/lambda/python:3.10
+
+# System deps: xgboost needs libgomp at runtime.
+RUN yum install -y libgomp && yum clean all
+
+COPY requirements-lambda.txt .
+RUN pip install --no-cache-dir -r requirements-lambda.txt
+
+# Inference path modules -- identical files to the production service, so the
+# Lambda cannot drift from what the EKS deployment does.
+COPY url_features.py  ${LAMBDA_TASK_ROOT}/
+COPY url_resolver.py  ${LAMBDA_TASK_ROOT}/
+COPY homograph.py     ${LAMBDA_TASK_ROOT}/
+
+# URL model only -- the RoBERTa email model is deliberately NOT in this image.
+COPY models/url_xgb_model.json    ${LAMBDA_TASK_ROOT}/models/
+COPY models/url_model_config.json ${LAMBDA_TASK_ROOT}/models/
+
+COPY lambda_handler.py ${LAMBDA_TASK_ROOT}/
+
+CMD [ "lambda_handler.lambda_handler" ]

@@ -320,7 +320,7 @@
                     wordElement.className = 'flex justify-between items-center bg-red-500/10 border border-red-500/30 p-4 rounded-xl hover:bg-red-500/20 transition-all';
                     wordElement.innerHTML = `
                         <span class="font-bold text-red-300 text-lg">"${word[0]}"</span>
-                        <span class="text-red-400 font-mono text-sm bg-red-500/20 px-3 py-1 rounded-lg">${word[1].toFixed(3)}</span>
+                        <span class="text-red-400 font-mono text-sm bg-red-500/20 px-3 py-1 rounded-lg">${word[1].toFixed(0)}%</span>
                     `;
                     riskyWords.appendChild(wordElement);
                 });
@@ -332,7 +332,7 @@
                     wordElement.className = 'flex justify-between items-center bg-green-500/10 border border-green-500/30 p-4 rounded-xl hover:bg-green-500/20 transition-all';
                     wordElement.innerHTML = `
                         <span class="font-bold text-green-300 text-lg">"${word[0]}"</span>
-                        <span class="text-green-400 font-mono text-sm bg-green-500/20 px-3 py-1 rounded-lg">${Math.abs(word[1]).toFixed(3)}</span>
+                        <span class="text-green-400 font-mono text-sm bg-green-500/20 px-3 py-1 rounded-lg">${Math.abs(word[1]).toFixed(0)}%</span>
                     `;
                     safeWords.appendChild(wordElement);
                 });

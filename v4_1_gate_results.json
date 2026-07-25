@@ -1,0 +1,62 @@
+[
+  {
+    "category": "Phishing - overt",
+    "rate": 1.0,
+    "ci_low": 0.9750288608542813,
+    "ci_high": 1.0,
+    "n": 150,
+    "structures": 5,
+    "bar": 0.9,
+    "passed": true
+  },
+  {
+    "category": "Phishing - subtle/BEC",
+    "rate": 0.5666666666666667,
+    "ci_low": 0.4866784070665957,
+    "ci_high": 0.6433254410473084,
+    "n": 150,
+    "structures": 5,
+    "bar": 0.65,
+    "passed": false
+  },
+  {
+    "category": "Legit - transactional",
+    "rate": 1.0,
+    "ci_low": 0.9750288608542813,
+    "ci_high": 1.0,
+    "n": 150,
+    "structures": 6,
+    "bar": 0.97,
+    "passed": true
+  },
+  {
+    "category": "Legit - security notes",
+    "rate": 1.0,
+    "ci_low": 0.9750288608542813,
+    "ci_high": 1.0,
+    "n": 150,
+    "structures": 6,
+    "bar": 0.95,
+    "passed": true
+  },
+  {
+    "category": "Legit - work/personal",
+    "rate": 1.0,
+    "ci_low": 0.9750288608542813,
+    "ci_high": 1.0,
+    "n": 150,
+    "structures": 4,
+    "bar": 0.97,
+    "passed": true
+  },
+  {
+    "category": "Legit - marketing",
+    "rate": 1.0,
+    "ci_low": 0.9689797289440706,
+    "ci_high": 1.0000000000000002,
+    "n": 120,
+    "structures": 3,
+    "bar": 0.95,
+    "passed": true
+  }
+]

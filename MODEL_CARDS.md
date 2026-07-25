@@ -17,10 +17,12 @@ card convention (Mitchell et al., 2019).
   training distribution, then truncated to 256 tokens. Production preprocessing
   in `inference_service.py` matches this normalization exactly.
 - **Output:** phishing probability in [0, 1]; threshold 0.5.
-- **Version:** v3 (current production). v1 was trained on a 2000s-era spam corpus
-  only; v2 added modern legitimate security mail but over-corrected into flagging
-  legitimate *transactional* email; v3 fixes both on a real multi-corpus dataset.
-  See EVALUATION.md ("Update - v3") for the full history.
+- **Version:** v4.1 (current production). v1 was trained on a 2000s-era spam
+  corpus only; v2 added modern legitimate security mail but over-corrected into
+  flagging legitimate *transactional* email; v3 fixed both on a real
+  multi-corpus dataset; v4.1 added BEC/spear-phishing coverage after measurement
+  showed v3 caught only ~25% of it. See EVALUATION.md for the full history and
+  the measurement corrections along the way.
 
 ## Intended use
 - **Primary:** flag phishing/spam content in email text and provide a
@@ -32,7 +34,15 @@ card convention (Mitchell et al., 2019).
   detecting malware attachments (text-only).
 
 ## Training data
-- **v3 (current):** a balanced multi-corpus dataset (~160,000 emails, ~50/50
+- **v4.1 (current)** adds to the v3 corpus: ~4,000 generated BEC / spear-phishing
+  examples (wire-transfer requests, fake invoices, vendor bank-detail changes,
+  portal credential lures) in the phishing class, and ~4,000 additional
+  legitimate security-notification phrasings plus expanded transactional
+  templates in the legitimate class. The BEC augmentation is **synthetic** --
+  real BEC corpora are scarce, which is why the training set lacked them.
+  Training used template pool A; evaluation uses structurally disjoint pool B,
+  verified programmatically to share no template.
+- **v3 base corpus:** a balanced multi-corpus dataset (~160,000 emails, ~50/50
   phishing/legitimate) combining real modern phishing (Nazario, Nigerian/419
   fraud, CEAS-08) and real legitimate mail (SpamAssassin ham, Enron ham, Ling),
   **plus** ~700 hand-labeled modern emails from a real inbox (Google Takeout;
@@ -46,21 +56,44 @@ card convention (Mitchell et al., 2019).
   a mostly-legacy pool. Both are documented in EVALUATION.md.)*
 
 ## Performance
-- **Held-out test (in-distribution, multi-corpus split, v3):** accuracy 0.9969,
-  precision 0.9965, recall 0.9973, F1 0.9969. (From the v3 training run.)
-- **Out-of-distribution validation gate (v3):** 7/7 novel phishing caught;
-  12/12 diverse legitimate passed, *including* transactional mail (orders,
-  receipts, statements, subscriptions, refunds, flights), all at ~0.000.
-  Reproducible via `evaluate_model_v3.py`.
-- **v2 regression probe (v3):** the exact transactional emails that v2 flagged
-  as phishing (~50% FP) all pass under v3 (5/5, ~0.000).
-- **Live-UI spot check:** real inbox mail (internship offer, conference notice,
-  congratulations) classified legitimate; unambiguous phishing flagged at 100%.
+- **Held-out test (in-distribution, v4.1):** accuracy 0.9964, F1 0.9965.
+- **Out-of-distribution evaluation (n=150 per category, 95% Wilson intervals),
+  v3 vs v4.1 on the same corpus via `eval_email_models.py`:**
+
+  | Category | v3 | v4.1 |
+  |---|---:|---:|
+  | Phishing - overt | 76.7% [69, 83] | **92.7%** [87, 96] |
+  | Phishing - subtle / BEC | 24.7% [18, 32] | **82.0%** [75, 87] |
+  | Legitimate - transactional | 94.0% [89, 97] | 90.7% [85, 94] |
+  | Legitimate - security notices | 82.0% [75, 87] | 81.3% [74, 87] |
+  | Legitimate - work / personal | 100% [98, 100] | 100% [98, 100] |
+  | Legitimate - marketing | 99.2% [95, 100] | 96.7% [92, 99] |
+  | *mean phishing recall* | *50.7%* | ***87.3%*** |
+  | *mean legitimate passed* | *93.8%* | *92.2%* |
+
+- **These are coverage results, not production rates.** The evaluation emails
+  are templated: they measure consistency across a phrasing space and detect
+  whole-category failures, but are not a random sample of real mail.
+- **Superseded:** the earlier "7/7 phishing, 12/12 legitimate" gate is retained
+  in EVALUATION.md as history only. At that size a 0/12 result has a 95% upper
+  bound near 24%, and it failed to detect either of the two weaknesses above.
 
 ## Limitations
-- The out-of-distribution validation sets are modest (single- to low-double-digit
-  per category). They show the specific failure modes are closed, not that the
-  false-positive rate is globally zero.
+- **Legitimate security notifications are flagged ~18% of the time, in both v3
+  and v4.1.** Two-factor codes, password-reset confirmations and new-device
+  alerts score as high as p=0.99. This is the most significant open problem: it
+  is the same category that caused the v1 failure, was declared fixed on eleven
+  emails, and remains substantially unresolved. Genuine security mail and
+  credential-harvest phishing share nearly all their vocabulary; what separates
+  them is whether the recipient initiated the action, which the text does not
+  reveal.
+- **BEC detection is validated only against synthetic augmentation.** Passing
+  demonstrates generalisation across BEC phrasing structures, not validated
+  real-world BEC detection. A BEC email is linguistically near-identical to a
+  legitimate internal request; the discriminating evidence is sender identity and
+  thread history, which a text-only classifier cannot observe.
+- The evaluation sets are templated, so reported rates are coverage results
+  rather than production estimates.
 - v3 is deliberately aggressive on genuinely ambiguous transactional-phishing
   lures (e.g. "parcel undelivered - pay a customs fee"), which it flags as
   phishing. Arguably the correct bias for a security tool, but a legitimate email
