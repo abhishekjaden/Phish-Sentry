@@ -2,13 +2,22 @@
 
 **Model under test:** RoBERTa-base sequence classifier, fine-tuned for phishing/spam email detection (the text-analysis model behind PhishSentry's email scan and `/api/predict/text`).
 
-> **Current production model: v3 (see the "Update - v3" section below).**
-> This report is written as a full history. The evaluations proceed v1 -> v2 -> v3;
-> **only v3 is the deployed model.** The v1 and v2 sections are retained because
-> the failures they document are what drove each subsequent retrain, and the
-> methodology hardened in response to each miss. If you only read one section,
-> read **Update - v3**. v3 out-of-distribution claims are reproducible locally via
-> `evaluate_model_v3.py`.
+> **Current production model: v4.1 (see the "Update - v4.1" section below).**
+> This report is written as a full history. The evaluations proceed
+> v1 -> v2 -> v3 -> v4.1; **only v4.1 is the deployed model.** Earlier sections
+> are retained because the failures they document are what drove each subsequent
+> retrain.
+>
+> **Two corrections to earlier claims in this document.** First, the v3
+> validation gate (7 phishing / 12 legitimate) was too small to support the
+> conclusions drawn from it -- 0/12 has a 95% upper bound near 24%. Re-measuring
+> at n=150 per category exposed two failures it could not detect. Second, the
+> measurement harness itself required three corrections before it produced
+> trustworthy numbers; those are documented in the v4.1 section rather than
+> quietly fixed.
+>
+> If you only read one section, read **Update - v4.1**. Current claims are
+> reproducible via `eval_email_models.py`.
 **Decision rule (production):** `phishing` if `P(class=phishing) > 0.5`, on text preprocessed and truncated to 256 tokens — identical to the deployed `inference_service.py` path.
 **Method:** evaluated locally against the exact deployed weights, with two test sets (below). Reproducible via `evaluate_model.py` in this repository.
 
@@ -309,7 +318,161 @@ evaluation methodology itself was hardened in response to each miss.
 
 ---
 
+## Update - Email model retrain (v4.1): BEC coverage, and correcting the measurement
+
+> **The v3 gate was too small to be trusted.** It reported 7/7 novel phishing
+> caught and 12/12 diverse legitimate passed, and that was taken as evidence the
+> model was sound. Re-measuring at n=150 per category exposed two failures the
+> gate could not have detected: near-blindness to business email compromise, and
+> a false-positive rate on legitimate security notifications that had been
+> reported as fixed since v1.
+
+### Why the previous numbers could not support their claims
+
+The v3 gate contained 7 phishing, 12 legitimate, and a 5-email regression probe.
+It was built to confirm two *specific* previously-observed failures had been
+closed, and it did that correctly. It was then treated as general evidence of
+model quality, which at that size it could not provide.
+
+Two categories it never covered: **business email compromise / spear phishing**
+(wire-transfer requests, fake invoices, vendor bank-detail changes, portal
+credential lures), and **legitimate security notifications tested broadly**.
+
+### Three corrections to the measurement harness
+
+Building a trustworthy harness took three attempts. Each earlier version
+produced confident numbers that were wrong, which is worth recording because the
+measurement apparatus proved as easy to get wrong as the model:
+
+| Harness | Defect | Effect |
+|---|---|---|
+| v3 gate (7/12/5) | Too small | CI too wide to support any rate claim |
+| First expanded harness | Brands assigned to content at random | Generated incoherent mail ("ICICI Bank -- your 1:1 is at 9am") and counted the model's correct reaction as a false positive |
+| Colab training gate | Scored bare template bodies, no subject line | Not comparable to the local harness; an early side-by-side using both was invalid |
+
+The current harness (`eval_email_models.py`) pairs brands only with categories
+they plausibly send, gives work mail no brand at all, varies subject lines per
+category, and **scores both checkpoints on the identical generated corpus** so
+differences are attributable to the model rather than to sampling.
+
+**What it can and cannot claim.** The emails are templated. They measure whether
+the model is consistent across a phrasing space and whether whole categories
+fail. They are **not** a random sample of real mail, so these are coverage
+results, not production estimates. A model can score well here and still fail on
+phrasings the templates do not contain -- which is exactly how the v1, v2 and v3
+evaluations each went wrong in turn.
+
+### v3 versus v4.1
+
+Same corpus, same harness, both checkpoints scored in one run. n=150 per
+category (120 for marketing), 95% Wilson intervals.
+
+| Category | v3 | 95% CI | v4.1 | 95% CI | delta |
+|---|---:|---|---:|---|---:|
+| Phishing -- overt | 76.7% | [69, 83] | **92.7%** | [87, 96] | +16.0 |
+| Phishing -- subtle / BEC | 24.7% | [18, 32] | **82.0%** | [75, 87] | +57.3 |
+| Legitimate -- transactional | 94.0% | [89, 97] | 90.7% | [85, 94] | -3.3 |
+| Legitimate -- security notices | 82.0% | [75, 87] | 81.3% | [74, 87] | -0.7 |
+| Legitimate -- work / personal | 100% | [98, 100] | 100% | [98, 100] | 0.0 |
+| Legitimate -- marketing | 99.2% | [95, 100] | 96.7% | [92, 99] | -2.5 |
+| **mean phishing recall** | **50.7%** | | **87.3%** | | **+36.6** |
+| **mean legitimate passed** | **93.8%** | | **92.2%** | | **-1.6** |
+
+**Shipping decision.** v4.1 trades 1.6 points of mean legitimate precision for
+36.6 points of mean phishing recall. In this deployment -- an assistive tool that
+shows a probability and an explanation rather than blocking mail -- a missed
+phishing email is the costlier error, so the trade was accepted. Recorded as a
+judgement call, not an unambiguous upgrade.
+
+**What changed in training.** ~4,000 generated BEC/spear examples added to the
+phishing class; ~4,000 additional legitimate security-notification phrasings and
+expanded transactional templates added to the legitimate class, on top of the
+existing multi-corpus dataset. Held-out in-distribution: accuracy 0.9964,
+F1 0.9965.
+
+### The finding that matters more than the comparison
+
+**Legitimate security notifications sit at roughly 82% in *both* models.**
+
+This is not a v4.1 regression. It is a long-standing weakness the v3 gate was too
+small to detect, in the same category that caused the original v1 failure and was
+declared fixed on the strength of eleven emails. Roughly one in five legitimate
+security emails is flagged:
+
+```
+Two-step verification was enabled on your Coinbase account   p=0.9991
+A new device was added to your HDFC Bank account             p=0.9687
+Your Dropbox two-factor authentication code is 48213         p=0.6780
+You recently requested a password reset...                   p=0.9777
+```
+
+These are among the emails users most need to trust. A tool that flags password
+resets and 2FA codes trains people to dismiss its warnings, eroding the value of
+the warnings that are correct. **This is the most important open problem in the
+email model** and v4.1 does not resolve it.
+
+Likely cause: genuine security notifications and credential-harvest phishing
+share nearly all their surface vocabulary -- *verify*, *sign-in*, *device*,
+*password*, *expires*. What separates them is whether the recipient initiated the
+action, which the message text does not reveal.
+
+### The BEC ceiling
+
+BEC detection improved 24.7% -> 82.0%. Two caveats bound what that means.
+
+**The augmentation is synthetic.** Real BEC corpora are scarce, which is why the
+training set lacked them. Training used template pool A; evaluation uses
+structurally disjoint pool B, verified programmatically to share no template.
+Passing therefore demonstrates generalisation across BEC *phrasing structures*,
+not validated detection of real-world BEC. Confirming the latter needs real
+samples and remains open.
+
+**There is a structural limit.** A BEC email is linguistically almost identical
+to a legitimate internal request -- *"Can you process this payment today?"* from a
+real CFO and from an impersonator are the same sentence. The discriminating
+evidence is sender identity, thread history, and organisational context, none of
+which a text-only classifier observes. This mirrors the ceiling documented below
+for the URL model: past a point, the signal is not in the input.
+
+### Open limitations (email model)
+
+- Security-notification false positives at ~18%, in both v3 and v4.1 -- the most
+  significant unresolved problem.
+- BEC validation rests on synthetic augmentation; no real-world BEC measurement
+  exists.
+- All figures come from templated mail: coverage results, not production rates.
+- Residual harness artifacts remain (some brand/content pairings still read
+  awkwardly), so legitimate-category figures are mildly pessimistic for both
+  models.
+- No real users. Every figure is from generated evaluation sets.
+
+### Reproducibility (email model)
+
+```
+eval_email_models.py                  v3 vs v4.1, corrected harness (reference)
+phishsentry_email_retrain_v4_1.ipynb  the v4.1 training run and its gate
+v4_1_gate_results.json                Colab gate output -- NOTE: scored
+                                      subject-less text, so NOT comparable to
+                                      eval_email_models.py figures
+evaluate_model_v3_expanded.py         superseded; random brand pairing
+evaluate_model_v3.py                  the original 7/12/5 gate, kept as history
+```
+
+---
+
 ## URL model (XGBoost) evaluation
+
+> **Read this before the numbers below.** The held-out recall of 0.963 reported
+> in this section is an **in-distribution** result on the Vrbancic dataset split.
+> Measured against live, currently-active phishing, recall is **38.3%**. Four
+> measured iterations attempted to close that gap; the final one produced a
+> **74.3% false-positive rate on genuine brand domains** -- it flagged the real
+> `paypal.com/login` -- which is disqualifying for a user-facing tool.
+>
+> **The browser extension therefore ships a deterministic rule-based
+> lookalike-domain detector, not this model.** It measures better on every axis
+> (comparison at the end of this section). The in-distribution results below
+> remain accurate as in-distribution results, and are retained for that reason.
 
 The URL model classifies links using 20 lexical + host-based features (URL
 length, path/directory structure, domain age, DNS TTL, ASN, response timing).
@@ -375,10 +538,165 @@ OR the domain is young), on the same held-out set:
 The model improves F1 by **+23.8 points** over the naive baseline, confirming it
 captures signal beyond simple length/age rules.
 
-### Honest summary
+### Measured against live phishing: 38.3% recall
 
-Strong, stable in-distribution performance; near-zero false positives on modern
-legitimate domains after retraining; a measured 37.5% residual on deep links
-(mitigated at the extension layer, not eliminated); and a clear improvement over
-naive baselines. The residual is a genuine property of lexical URL features, not
-a bug — reported and mitigated rather than concealed.
+60 URLs were sampled (seeded, reproducible) from the OpenPhish community feed --
+verified currently-active phishing -- and scored through the exact production
+path. Reproducible via `measure_url_recall.py`.
+
+| Metric | Result |
+|---|---:|
+| URLs scored | 60 |
+| Caught (p >= 0.5) | 23 |
+| **Live recall** | **38.3%** |
+| Median calibrated score | 0.2131 |
+
+**Not a degraded-lookup artifact.** Recall by how many of the five
+network-dependent features resolved: 0 missing -> 8/16 (50%); 1 -> 0/5; 2 ->
+13/35 (37%); 3 -> 2/3. With every live lookup succeeding, recall was still 50%.
+
+### Diagnosis: blindness to hosting-platform abuse
+
+The misses clustered on phishing hosted on **legitimate platforms**: ~15 on
+`*.pages.dev`, ~8 on `*.blogspot.com`, and others on `*.godaddysites.com`,
+`*.weeblysite.com`, `*.vercel.app`. What the model *did* catch were dedicated
+malicious domains (`dogespin.net`, `wordksl.top`, `roblox.com.am`, `.cfd`
+domains) -- the 2020-era profile that dominates the training corpus.
+
+For a phishing page at `3rf3x34x.pages.dev`, every feature reports benign: the
+registered domain is Cloudflare's (years old, valid WHOIS, legitimate ASN,
+normal TTL), the URL is short, no directory depth. A legitimate
+`myportfolio.pages.dev` is near-identical across all 20 features. The only
+discriminating signal is that one subdomain is a random string and the other is
+a word -- and no original feature measures that.
+
+### Four measured iterations
+
+A v2 feature set was built (37 features: subdomain entropy, digit ratio,
+consonant runs, dictionary word-likeness, hosting-platform flag, brand
+impersonation, action tokens, suspicious TLDs) with zero network calls, trained
+on ~16,000 URLs from public feeds. Train/test split **by registered domain**,
+not randomly -- feed entries share domains heavily, and a random URL split would
+place the same domain on both sides and inflate the score.
+
+| Iteration | Live recall | Deep-link FP | Platform FP | Genuine-brand FP |
+|---|---:|---:|---:|---:|
+| v1 -- 20 network features | 38.3% | 37.5% | -- | -- |
+| v2 -- new features, apex-domain negatives | 65.0% | **100%** | 8.3% | -- |
+| v2 -- plus deep-URL negatives | 63.7% | 25.0% | 8.3% | -- |
+| v2 -- plus dictionary features, threshold 0.35 | 50.0% | 25.0% | 8.3% | **74.3%** |
+
+**Iteration 2** learned *"URL has a path -> phishing"* -- `qty_slash_url` was the
+top feature by gain (76.1, roughly double the next). The negative class came from
+Majestic Million, which yields bare apex domains, so every legitimate example was
+path-free while the phishing feed was full of deep paths. Fixed by harvesting
+5,000 legitimate deep URLs (98% with a real path) from Wayback CDX, Hacker News
+and Wikipedia.
+
+**Iteration 3** removed that shortcut and recall *held* at 63.7%, confirming the
+gain was real. But platform abuse was still missed: the phonotactic
+word-likeness heuristic passed pronounceable nonsense
+(`sp3ct-drenix-biz8-solvek-tranu.pages.dev` has vowels in the right places).
+
+**Iteration 4** added dictionary-based subdomain features, which XGBoost assigned
+near-zero gain -- correctly, because usernames are also non-dictionary strings:
+
+```
+3rf3x34x.pages.dev                 phishing    non-dictionary subdomain
+johnsmith.github.io                legitimate  non-dictionary subdomain
+khukucuonlogun.godaddysites.com    phishing    non-dictionary subdomain
+eshwarkole1641-esh.github.io       legitimate  non-dictionary subdomain
+```
+
+It also exposed the disqualifying failure. Top features were
+`action_token_in_path` and `brand_token_present`, so the model learned
+**"brand + /login -> phishing"** -- and nothing in the negative set contradicted
+it, because genuine brand sign-in pages were never present as legitimate
+examples. On 280 genuine brand URLs: `paypal.com/login` p=0.963,
+`paypal.com/signin` p=0.963, `paypal.com/account` p=0.929 -- **208 of 280
+flagged (74.3%)**.
+
+### Why this is a ceiling, not a tuning problem
+
+Training positives were checked for platform representation: the top ten
+platform domains alone (`duckdns.org` 204, `pages.dev` 173,
+`000webhostapp.com` 116, `webflow.io` 105, `vercel.app` 90, and others) account
+for **16.6%** of positives, with more in the tail. The model had thousands of
+platform-abuse examples and still missed them on live data.
+
+The discriminating evidence is not in the URL. Whether `3rf3x34x.pages.dev` hosts
+a Roblox credential form or a portfolio is determined by **page content**, which
+URL-only classification cannot observe. Closing that gap requires fetching and
+analysing the page -- a materially different system with its own privacy and
+latency consequences.
+
+**Sampling caveat.** Live-recall figures come from n=60-80 samples, roughly +/-11
+percentage points. The 65.0% and 63.7% readings are not distinguishable from each
+other. The differences carrying signal are the large ones -- 38% versus ~60% --
+and the false-positive rates, measured on 280 URLs.
+
+### What shipped: deterministic rules
+
+The extension's actual claim is narrower than "phishing detection": *does this
+domain imitate a known brand?* That is a deterministic string question with an
+exact answer.
+
+`lookalike_detector.py` implements ordered rules -- brand-domain allowlist (R0),
+official org pages on code hosts (R0-org), punycode/homograph folding (R1),
+character substitution (R2), brand token in a non-brand domain (R3), edit
+distance 1-2 (R4), brand in an unrelated subdomain (R5), brand plus suspicious
+TLD (R6).
+
+The decisive property is **R0**: genuine brand domains are allowlisted *before
+any heuristic executes*, so the false-positive rate on them is **structurally
+zero rather than statistically small**. A probabilistic model cannot offer that
+guarantee.
+
+Measured on the same four probe sets (`eval_lookalike_detector.py`):
+
+| Metric | Rules | Model (best iteration) |
+|---|---:|---:|
+| Synthetic typosquat recall (n=600) | **98.0%** | 90.3% |
+| Real brand-impersonation recall, live feed | **98.6%** | 77.1% |
+| Genuine brand domains kept clean (n=280) | **100.0%** | 25.7% |
+| Ordinary legitimate browsing kept clean | **100.0%** | 68.8% |
+
+Secondary benefits: verdicts are explainable per-rule rather than as an opaque
+probability; no training data, no drift, no retraining pipeline; and the
+deployment artifact is a 1 MB zip rather than a ~1 GB container image.
+
+### Honest limitations of the rules approach
+
+- **The brand and platform lists require maintenance.** A brand absent from
+  `BRAND_DOMAINS` is undetectable, and a *legitimate* brand domain missing from
+  it would be a false positive. That list is the safety-critical component.
+- **Fused short brand names are partially missed.** Brands under four characters
+  match on token boundaries, or on a token prefix when corroborated by a
+  credential-harvest word (`dhlaccount.com` is caught, `dhlevripremium.com` is
+  not). Bare three-letter substring matching would fire "ups" inside
+  `startups.com`, so the miss is accepted deliberately.
+- **Heavily mangled short domains are missed** (`fedx.com`, `dlh.com`) -- too
+  short to separate from legitimate initialisms.
+- **Brand names in subdomains on shared hosting are genuinely ambiguous.**
+  `netflix-clone-x.vercel.app` may be a student project or an impersonation page.
+  These receive a lower-confidence caution verdict with wording that says so.
+- **The scope limit is real and stated in the store listing:** it does not detect
+  phishing hosted on legitimate platforms under an unrelated subdomain.
+
+### The parallel with the email model
+
+Structurally the same failure as the email model's v1 -> v3 arc: an
+in-distribution score that looked excellent while concealing a generalization
+gap, found only by testing against data the training set did not represent.
+
+The difference is the conclusion. For email, better data and a stricter gate
+improved the model. For URLs, four measured iterations established that the
+discriminating signal is not present in the input at all -- so the honest outcome
+was to narrow the claim to what could be done well, and publish the measurements
+that justify the narrowing.
+
+*Reproducibility: `measure_url_recall.py` (live recall, v1 model),
+`collect_url_dataset_v2.py` + `train_url_model_v2.py` (v2 iterations),
+`measure_lookalike_recall.py` (model on the narrow task),
+`eval_lookalike_detector.py` (rules on the same probe sets). Live-feed figures
+vary between runs as the feeds update.*
