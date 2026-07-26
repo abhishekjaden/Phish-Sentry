@@ -33,7 +33,7 @@ honestly — including finding and fixing real-world failure modes, and measurin
 ## Evaluation (the core of this project)
 
 ### Email model (RoBERTa)
-- **Held-out test (in-distribution):** accuracy 0.996, F1 0.997.
+- **Current model: v4.1.** Held-out test (in-distribution): accuracy 0.996, F1 0.997.
 - **Out-of-distribution evaluation (n=150 per category):** phishing recall
   **87.3%** mean (overt 92.7%, subtle/BEC 82.0%); legitimate mail passed **92.2%**
   mean. Reproducible via `eval_email_models.py`, which scores the current model
