@@ -65,7 +65,7 @@ honestly — including finding and fixing real-world failure modes, and measurin
   consumes reports benign. Four measured iterations established this as a
   representational ceiling rather than a tuning problem.
 - **The browser extension therefore ships a deterministic rule-based lookalike
-  detector, not this model** -- 98.0% typosquat recall with structurally zero
+  detector, not this model** -- 91.5% typosquat recall (post-audit) with structurally zero
   false positives on genuine brand domains. See EVALUATION.md.
 - **Modern legitimate URLs (n = 276):** 0.4% false positives.
 - **Baseline:** +23.8 F1 points over a naive length/age heuristic.

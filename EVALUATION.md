@@ -656,20 +656,85 @@ Measured on the same four probe sets (`eval_lookalike_detector.py`):
 
 | Metric | Rules | Model (best iteration) |
 |---|---:|---:|
-| Synthetic typosquat recall (n=600) | **98.0%** | 90.3% |
-| Real brand-impersonation recall, live feed | **98.6%** | 77.1% |
+| Synthetic typosquat recall (n=600) | **91.5%** | 90.3% |
+| Real brand-impersonation recall, live feed | **93.5%** | 77.1% |
 | Genuine brand domains kept clean (n=280) | **100.0%** | 25.7% |
 | Ordinary legitimate browsing kept clean | **100.0%** | 68.8% |
+| Known-good real domains kept clean (n=118) | **100.0%** | not measured |
+
+> These figures are **post-audit**. An earlier version of this section reported
+> 98.0% typosquat recall — before the detector had been tested against a broad
+> set of real domains. That audit is described below, and correcting what it
+> found cost 6.5 points of recall.
 
 Secondary benefits: verdicts are explainable per-rule rather than as an opaque
 probability; no training data, no drift, no retraining pipeline; and the
 deployment artifact is a 1 MB zip rather than a ~1 GB container image.
 
+### The self-audit: 15 false positives on real domains
+
+The probe sets used above were written alongside the detector, which is the
+same weakness that produced the 96.3% URL-model figure: a test set built from
+the same assumptions as the thing it tests. So the detector was run over 118
+independently-chosen real domains — regional brand sites, banks, community
+sites, and domains that merely contain a brand substring.
+
+**15 were flagged.** Each would have been a live warning shown to a user about
+a legitimate site. They fell into three groups:
+
+| Group | Examples | Cause |
+|---|---|---|
+| Genuine regional domains (10) | `paypal.co.uk`, `fedex.co.uk`, `apple.co.uk`, `google.de`, `hsbc.com.hk` | simply absent from the allowlist |
+| Legitimate domains containing a brand token (4) | `applefcu.org` (a credit union), `applesupport.org`, `apple-scruffs.com`, `steamdb.info` | R3 fired on any brand substring |
+| Edit-distance collision (1) | `metabase.com` vs `metamask` | R4 threshold too loose |
+
+Only the first group was a data gap. The other two were rule defects, and they
+could not be allowlisted away — there are unbounded legitimate domains
+containing "apple".
+
+**Three fixes:**
+
+1. **67 regional domains added** to the allowlist.
+2. **R3 now requires corroboration.** A brand token alone no longer fires; it
+   must appear alongside a credential-harvest word, a low-reputation TLD, or
+   character substitution in the brand itself. `paypalsupport.com` still flags
+   ("support" corroborates); `applefcu.org` does not.
+3. **R4 tightened.** Edit distance 2 now requires a brand of 8+ characters,
+   near-equal length, and matching first-four and last-two characters.
+
+A fourth defect surfaced separately: `amazonaws.com` was listed as an Amazon
+*brand* domain, so R0 allowlisted it and every S3 bucket became unflaggable —
+`paypal-verify.s3.amazonaws.com` returned safe. Shared hosting was moved to
+`HOSTING_PLATFORMS`, where R5 inspects the subdomain. The distinction now held
+explicitly: a **brand domain** is one whose owner controls all content, and may
+be allowlisted; a **hosting platform** is one where anyone may publish, and
+never may be.
+
+**Result:** 0 of 118 flagged, and typosquat recall fell 98.0% → 91.5%.
+
+The cost was accepted deliberately. Warning a user away from their credit union
+is worse than missing one typosquat, and precision-first is the property that
+made the rules preferable to the model in the first place. The remaining misses
+are mostly heavy character transpositions (`linekdin.com`, `dropbxo.com`) —
+real gaps, but ones that fail safe.
+
+The audit is reproducible via `audit_brand_list.py --self-audit`, which also
+proposes (never auto-applies) allowlist and platform additions. It does not
+auto-apply because an incorrect allowlist entry means the tool actively vouches
+for a domain it should warn about — the one failure mode rule R0 exists to make
+structurally impossible.
+
 ### Honest limitations of the rules approach
 
-- **The brand and platform lists require maintenance.** A brand absent from
-  `BRAND_DOMAINS` is undetectable, and a *legitimate* brand domain missing from
-  it would be a false positive. That list is the safety-critical component.
+- **Three lists require ongoing maintenance, and all three are
+  safety-critical.** `BRAND_DOMAINS` values are the allowlist — a genuine domain
+  missing from it becomes a false positive (this is what the audit found).
+  `KNOWN_LEGITIMATE` silences the detector for specific domains that legitimately
+  contain a brand token. `HOSTING_PLATFORMS` determines which domains may never
+  be blanket-allowlisted. An error in any of them is user-visible.
+- **The audit is a snapshot, not a guarantee.** 118 domains were checked; the
+  web has rather more. New regional domains and new legitimate brand-adjacent
+  sites will surface as false positives until they are added.
 - **Fused short brand names are partially missed.** Brands under four characters
   match on token boundaries, or on a token prefix when corroborated by a
   credential-harvest word (`dhlaccount.com` is caught, `dhlevripremium.com` is
