@@ -49,33 +49,33 @@ _extract = tldextract.TLDExtract(suffix_list_urls=(), fallback_to_snapshot=True)
 # to SAFE before any heuristic runs.
 # ---------------------------------------------------------------------------
 BRAND_DOMAINS = {
-    "paypal": {"paypal.com", "paypal.me", "paypalobjects.com"},
-    "apple": {"apple.com", "icloud.com", "apple.co", "applecard.apple"},
+    "paypal": {"paypal.com", "paypal.me", "paypalobjects.com", "paypal.co.uk", "paypal.de", "paypal.fr", "paypal.ca", "paypal.com.au", "paypal.in"},
+    "apple": {"apple.com", "icloud.com", "apple.co", "applecard.apple", "apple.co.uk", "apple.de", "apple.fr", "apple.ca", "apple.com.au", "apple.co.jp", "apple.in"},
     "icloud": {"apple.com", "icloud.com"},
     "microsoft": {"microsoft.com", "live.com", "msn.com", "office.com",
                   "office365.com", "outlook.com", "microsoftonline.com",
-                  "sharepoint.com", "azure.com", "windows.com"},
+                  "azure.com", "windows.com", "microsoft.co.uk", "microsoft.de", "microsoft.fr", "microsoft.ca", "microsoft.com.au", "microsoft.co.in"},
     "outlook": {"microsoft.com", "live.com", "outlook.com"},
     "office": {"microsoft.com", "office.com", "office365.com"},
-    "netflix": {"netflix.com", "nflxvideo.net", "nflximg.net"},
+    "netflix": {"netflix.com", "nflxvideo.net", "nflximg.net", "netflix.co.uk", "netflix.ca", "netflix.com.au", "netflix.de", "netflix.fr"},
     "amazon": {"amazon.com", "amazon.in", "amazon.co.uk", "amazon.de",
-               "amazon.co.jp", "amazon.ca", "amazon.com.au", "amazonaws.com",
-               "primevideo.com", "audible.com"},
+               "amazon.co.jp", "amazon.ca", "amazon.com.au",
+               "primevideo.com", "audible.com", "amazon.es", "amazon.it", "amazon.nl", "amazon.mx", "amazon.com.br", "amazon.sg", "amazon.ae"},
     "google": {"google.com", "google.co.in", "google.co.uk", "youtube.com",
-               "gmail.com", "withgoogle.com", "googleusercontent.com",
-               "goo.gl", "android.com", "chrome.com"},
+               "gmail.com", "withgoogle.com",
+               "goo.gl", "android.com", "chrome.com", "google.de", "google.fr", "google.co.jp", "google.com.au", "google.ca", "google.es", "google.it", "google.nl"},
     "gmail": {"google.com", "gmail.com"},
     "youtube": {"youtube.com", "youtu.be", "google.com"},
     "facebook": {"facebook.com", "fb.com", "fbcdn.net", "meta.com",
                  "messenger.com"},
     "instagram": {"instagram.com", "cdninstagram.com", "facebook.com"},
     "whatsapp": {"whatsapp.com", "wa.me", "facebook.com"},
-    "linkedin": {"linkedin.com", "licdn.com", "lnkd.in"},
+    "linkedin": {"linkedin.com", "licdn.com", "lnkd.in", "linkedin.cn"},
     "twitter": {"twitter.com", "x.com", "t.co", "twimg.com"},
     "roblox": {"roblox.com", "rbxcdn.com"},
     "steam": {"steampowered.com", "steamcommunity.com", "valvesoftware.com"},
     "discord": {"discord.com", "discordapp.com", "discord.gg"},
-    "spotify": {"spotify.com", "scdn.co", "spotifycdn.com"},
+    "spotify": {"spotify.com", "scdn.co", "spotifycdn.com", "spotify.co.uk"},
     "twitch": {"twitch.tv", "ttvnw.net"},
     "ledger": {"ledger.com", "ledgerwallet.com"},
     "trezor": {"trezor.io"},
@@ -84,19 +84,19 @@ BRAND_DOMAINS = {
     "binance": {"binance.com", "binance.us"},
     "uniswap": {"uniswap.org"},
     "kraken": {"kraken.com"},
-    "dhl": {"dhl.com", "dhl.de", "dpdhl.com"},
-    "fedex": {"fedex.com"},
-    "ups": {"ups.com"},
+    "dhl": {"dhl.com", "dhl.de", "dpdhl.com", "dhl.co.uk", "dhl.fr", "dhl.es", "dhl.it", "dhl.nl", "dhl.com.au", "dhl.co.in"},
+    "fedex": {"fedex.com", "fedex.co.uk", "fedex.ca", "fedex.com.au", "fedex.de", "fedex.fr"},
+    "ups": {"ups.com", "ups.co.uk", "ups.ca", "ups.de", "ups.fr", "ups.com.au"},
     "usps": {"usps.com", "usps.gov"},
-    "dropbox": {"dropbox.com", "dropboxusercontent.com"},
+    "dropbox": {"dropbox.com", "dropboxusercontent.com", "dropbox.co.uk"},
     "docusign": {"docusign.com", "docusign.net"},
     "zoom": {"zoom.us", "zoom.com"},
-    "adobe": {"adobe.com", "adobelogin.com"},
+    "adobe": {"adobe.com", "adobelogin.com", "adobe.co.uk", "adobe.de", "adobe.in"},
     "chase": {"chase.com", "jpmorganchase.com"},
     "wellsfargo": {"wellsfargo.com"},
     "bankofamerica": {"bankofamerica.com", "bofa.com"},
     "citibank": {"citibank.com", "citi.com"},
-    "hsbc": {"hsbc.com", "hsbc.co.uk", "hsbc.co.in"},
+    "hsbc": {"hsbc.com", "hsbc.co.uk", "hsbc.co.in", "hsbc.com.hk", "hsbc.ca", "hsbc.com.au", "hsbc.com.sg", "hsbc.ae"},
     "barclays": {"barclays.co.uk", "barclays.com"},
     "hdfcbank": {"hdfcbank.com"},
     "icici": {"icicibank.com"},
@@ -117,6 +117,36 @@ BRAND_DOMAINS = {
     "gitlab": {"gitlab.com"},
 }
 
+# ---------------------------------------------------------------------------
+# Domains that legitimately contain a brand token but are NOT owned by that
+# brand. These are indistinguishable from impersonation by any rule -- e.g.
+# 'applesupport.org' is structurally identical to 'paypalsupport.com' -- so
+# they require an explicit, human-verified exception.
+#
+# This is intentionally NOT part of BRAND_DOMAINS: these are not official brand
+# domains, and listing them there would make them authoritative for the brand.
+#
+# SAFETY: every entry here silences the detector for that domain. Verify each
+# one personally before adding, and record why.
+# ---------------------------------------------------------------------------
+KNOWN_LEGITIMATE = {
+    "applesupport.org":   "independent Apple user-support community",
+    "applefcu.org":       "Apple Federal Credit Union -- unrelated to Apple Inc.",
+    "apple-scruffs.com":  "Beatles fan site",
+    "steamdb.info":       "well-known community Steam database",
+    "steamcommunity.com": "official Valve community domain",
+    "steamdb.io":         "SteamDB alternate domain",
+    "metabase.com":       "analytics company, near-collision with 'metamask'",
+    "metafilter.com":     "community weblog, near-collision with 'meta'",
+    "metacritic.com":     "review aggregator, near-collision with 'meta'",
+    "googleapis.com":     "Google API service domain",
+    "googleusercontent.com": "Google user-content domain",
+    "gstatic.com":        "Google static assets",
+    "paypalobjects.com":  "PayPal asset CDN",
+    "visastudyguide.com": "unrelated to Visa Inc.",
+}
+
+
 ALL_LEGIT_DOMAINS = set()
 for _s in BRAND_DOMAINS.values():
     ALL_LEGIT_DOMAINS |= _s
@@ -125,14 +155,20 @@ for _s in BRAND_DOMAINS.values():
 # but is also how legitimate clone/demo projects are named, so it gets a
 # lower-confidence verdict with explicit wording.
 HOSTING_PLATFORMS = {
-    "pages.dev", "blogspot.com", "vercel.app", "netlify.app", "web.app",
-    "firebaseapp.com", "github.io", "gitlab.io", "herokuapp.com",
+    "amazonaws.com",
+    "googleusercontent.com",
+    "sharepoint.com",
+    "azurewebsites.net",
+    "web.app",
+    "firebaseapp.com",
+    "pages.dev", "blogspot.com", "vercel.app", "netlify.app",
+    "github.io", "gitlab.io", "herokuapp.com",
     "godaddysites.com", "weeblysite.com", "weebly.com", "wixsite.com",
     "typedream.app", "edgeone.dev", "replit.app", "repl.co", "wasmer.app",
     "lovable.app", "surge.sh", "glitch.me", "onrender.com", "r2.dev",
     "workers.dev", "duckdns.org", "000webhostapp.com", "webflow.io",
     "gitbook.io", "notion.site", "carrd.co", "framer.website",
-    "ngrok.io", "ngrok-free.app", "trycloudflare.com", "azurewebsites.net",
+    "ngrok.io", "ngrok-free.app", "trycloudflare.com",
 }
 
 SUSPICIOUS_TLDS = {
@@ -312,6 +348,14 @@ def analyze(url):
         return verdict(False, 0.0, None,
                        "Registered domain is a verified brand domain.", "R0")
 
+    # -- R0b: known-legitimate domain that merely CONTAINS a brand token ----
+    # Checked before every heuristic, for the same reason as R0: no downstream
+    # rule may override a domain that has been human-verified as genuine.
+    if registered in KNOWN_LEGITIMATE:
+        return verdict(False, 0.0, None,
+                       f"Known legitimate domain ({KNOWN_LEGITIMATE[registered]}).",
+                       "R0b")
+
     # -- R1: punycode / non-ASCII host that folds onto a brand --------------
     if _has_punycode(host) or _non_ascii(host):
         try:
@@ -349,23 +393,69 @@ def analyze(url):
     # -- R3: brand token inside a registered domain that is not the brand's -
     # catches paypal-secure.com, paypalsupport.com, login-steam.com,
     # fedexverify.com, roblox.com.am
+    # R3 requires CORROBORATION. A brand token alone is not enough: many
+    # legitimate domains contain a brand substring without impersonating it
+    # (applefcu.org is a credit union, steamdb.info is a community database,
+    # apple-scruffs.com is a Beatles reference). Firing on those would warn
+    # users away from real sites, which is the failure this whole ruleset
+    # exists to avoid.
+    #
+    # Corroborating signals, any one of which suffices:
+    #   - a credential-harvest word in the domain or path
+    #   - a low-reputation TLD
+    #   - character substitution inside the brand itself (paypa1)
+    #
+    # Cost: brand + innocuous-word squats (apple-store-online.com) are now
+    # missed. Deliberate -- precision over recall.
     for brand in BRAND_DOMAINS:
         if not on_platform and _brand_matches(brand, registered, parsed.path):
-            sus = " on a low-reputation TLD" if tld in SUSPICIOUS_TLDS else ""
-            conf = 0.95 if tld in SUSPICIOUS_TLDS else 0.90
+            hay = _fold_keep_separators(registered + " " + parsed.path)
+            toks = _tokens(registered + " " + parsed.path)
+            has_harvest = bool(toks & CORROBORATING_WORDS) or any(
+                w in hay for w in CORROBORATING_WORDS)
+            susp_tld = tld in SUSPICIOUS_TLDS
+            # was the brand spelled with substituted characters?
+            substituted = (brand in _fold(registered)
+                           and brand not in registered.lower())
+            if not (has_harvest or susp_tld or substituted):
+                continue
+            reasons = []
+            if substituted:
+                reasons.append("with character substitution")
+            if susp_tld:
+                reasons.append(f"on a low-reputation '.{tld}' domain")
+            if has_harvest:
+                reasons.append("alongside sign-in or payment wording")
+            conf = 0.95 if (susp_tld or substituted) else 0.90
             return verdict(True, conf, brand,
-                           f"'{brand}' appears in the domain '{registered}', "
-                           f"which is not owned by {brand}{sus}.", "R3")
+                           f"'{brand}' appears in the domain '{registered}' "
+                           f"{' and '.join(reasons)}, and this domain is not "
+                           f"owned by {brand}.", "R3")
 
     # -- R4: near-miss edit distance from a brand ---------------------------
     # catches ppaypal, payapl, aple, amazn. Guarded by length so short
     # unrelated words do not trip it.
+    # R4 tightened: distance 2 is only acceptable on longer labels of near-equal
+    # length. 'metabase' vs 'metamask' is distance 2 on an 8-char word, and
+    # Metabase is a real company -- at the old threshold it was flagged.
     if len(folded_label) >= 5 and not on_platform:
         for brand in BRAND_DOMAINS:
             if len(brand) < 5:
                 continue
             d = _levenshtein(folded_label, brand, cap=2)
-            if 1 <= d <= 2 and abs(len(folded_label) - len(brand)) <= 2:
+            if d == 0:
+                continue
+            len_diff = abs(len(folded_label) - len(brand))
+            if d == 1 and len_diff <= 1:
+                ok = True
+            elif d == 2 and len(brand) >= 8 and len_diff <= 1:
+                # distance 2 on a long brand, and only if the first two
+                # characters still agree -- 'metabase'/'metamask' share 'me'
+                # so this alone is not enough; require a shared prefix of 4.
+                ok = folded_label[:4] == brand[:4] and folded_label[-2:] == brand[-2:]
+            else:
+                ok = False
+            if ok:
                 return verdict(True, 0.88, brand,
                                f"Domain '{label}' is {d} character(s) from "
                                f"'{brand}' -- possible typosquat.", "R4")
@@ -467,6 +557,35 @@ if __name__ == "__main__":
         ("https://backups.example.org/", False),
         ("https://groups.io/g/some-group", False),
         ("https://closeups-photography.com/portfolio", False),
+        # regional variants -- genuine, must NOT flag
+        ("https://google.de/", False),
+        ("https://fedex.co.uk/", False),
+        ("https://apple.co.uk/", False),
+        ("https://paypal.co.uk/signin", False),
+        ("https://hsbc.com.hk/", False),
+        # brand substring in an unrelated legitimate domain -- must NOT flag
+        ("https://applefcu.org/", False),
+        ("https://apple-scruffs.com/", False),
+        ("https://steamdb.info/app/570/", False),
+        ("https://metabase.com/", False),
+        ("https://applesupport.org/", False),
+        # but brand + harvest wording still MUST flag
+        ("https://paypalsupport.com/", True),
+        ("https://apple-verify-account.com/signin", True),
+        ("https://steam-login.info/", True),
+        # known-legitimate exceptions -- must NOT flag
+        ("https://applesupport.org/", False),
+        ("https://steamdb.info/app/570/", False),
+        ("https://metabase.com/", False),
+        ("https://amazonaws.com/", False),
+        # but the structurally-identical impersonations still MUST flag
+        ("https://paypalsupport.com/", True),
+        ("https://steam-login.info/signin", True),
+        # shared hosting must NOT be blanket-allowlisted by R0
+        ("https://paypal-verify.s3.amazonaws.com/login", True),
+        ("https://netflix-billing.s3.amazonaws.com/", True),
+        ("https://d1234abcd.cloudfront.net/assets/app.js", False),
+        ("https://myapp.s3.amazonaws.com/index.html", False),
     ]
     print(f"{'URL':<58} {'expect':<7} {'got':<7} rule")
     print("-" * 88)
