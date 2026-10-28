@@ -1,60 +1,97 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Privacy Policy - PhishSentry Lookalike Domain Checker</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How PhishSentry Connected handles account details, selected phishing checks, browser observations and optional cloud summaries.">
+<title>Privacy Policy — PhishSentry</title>
 <style>
-body{max-width:44rem;margin:2rem auto;padding:0 1.25rem;
-font:16px/1.65 -apple-system,Segoe UI,Roboto,sans-serif;color:#1f2937}
-h1{font-size:1.6rem} h2{margin-top:2rem;font-size:1.2rem}
-code{background:#f3f4f6;padding:.1rem .3rem;border-radius:3px;font-size:.9em}
-table{border-collapse:collapse} td,th{border:1px solid #d1d5db;padding:.4rem .6rem}
-a{color:#1d4ed8}
-</style></head><body>
-<h1>Privacy Policy — PhishSentry Lookalike Domain Checker</h1>
-<p><strong>Last updated:</strong> 25 July 2026 <strong>Extension version:</strong> 2.0.0</p>
-<h2>Summary</h2>
-<p>The extension checks whether the domain you are visiting imitates a known brand. To do that it sends <strong>the hostname only</strong> to a checking service. It does not send the page path, query string, or page content. Nothing is stored on the server. There are no accounts, no analytics, and no third parties.</p>
-<h2>What is transmitted</h2>
-<p>When you visit a page, or press <strong>Check this page</strong>, the extension may send a single piece of information to its checking endpoint:</p>
-<ul><li><strong>The hostname of the site</strong>, for example <code>example-login.com</code>.</li></ul>
-<p>It does <strong>not</strong> transmit:</p>
-<ul><li>the full URL, the path, the query string, or the URL fragment</li>
-<li>page content, form fields, cookies, or anything you type</li>
-<li>your IP address beyond what any ordinary HTTPS request necessarily reveals to</li>
-  the receiving server
-<li>any identifier for you, your browser, or your installation</li></ul>
-<p>Requests carry no user ID, no device ID, and no session token. Requests from different users are indistinguishable from one another apart from network-level metadata.</p>
-<h3>Domains that are never transmitted</h3>
-<p>The extension ships with a built-in list of widely-used domains (search engines, major cloud and developer platforms, banks, universities, news sites, and similar). Pages on those domains are resolved **entirely inside your browser<strong> and their hostnames are </strong>never sent anywhere at all**. In ordinary browsing this means most of the sites you visit never leave your device.</p>
-<p>You can read the exact list in <code>background.js</code> in the public source repository.</p>
-<h2>What is stored</h2>
-<p><strong>On the server: nothing.</strong> The checking service is stateless. It holds no database and writes no records of the hostnames it receives. Its logs record only the verdict (whether a lookalike pattern matched) and which rule matched. Hostnames are deliberately excluded from those logs.</p>
-<p><strong>In your browser:</strong> the extension caches verdicts for hostnames you have visited, in Chrome's local extension storage, so repeated visits do not need a repeated request. This cache holds at most 300 entries, expires after 30 minutes per entry, never leaves your device, and is deleted when you remove the extension. You can clear it at any time by removing and reinstalling the extension.</p>
-<h2>What is not done with your data</h2>
-<ul><li>Data is <strong>not sold</strong> to anyone, and is not transferred to any third party.</li>
-<li>Data is <strong>not used</strong> for advertising, profiling, tracking, or any purpose</li>
-  other than answering the single question "does this domain imitate a known
-  brand?"
-<li>Data is <strong>not used</strong> to determine creditworthiness or for lending decisions.</li>
-<li>There is <strong>no analytics SDK</strong>, no telemetry, and no error-reporting service.</li></ul>
-<h2>Permissions, and why each is needed</h2>
-<ul><li><strong><code>tabs</code></strong> — to read the address of the tab you are viewing, so its domain can</li>
-  be checked. Used for the domain only.
-<li><strong><code>storage</code></strong> — to keep the local verdict cache described above.</li>
-<li><strong><code>notifications</code></strong> — to show a desktop notification when a domain appears to</li>
-  imitate a brand.
-<li><strong>Content script on all pages</strong> — to display a dismissible warning banner</li>
-  inside a page whose domain looks like an imitation. The script only draws that
-  banner. It does not read page content, form data, or anything you type.
-<li><strong>Host access to the checking endpoint</strong> — the extension can make requests to</li>
-  its own checking endpoint and to no other server.</ul>
-<h2>What this extension does not do</h2>
-<p>It checks domain names for imitation patterns. It does <strong>not</strong> detect phishing hosted on a legitimate platform under an unrelated subdomain (for example, a credential form hosted at a random subdomain of a free hosting provider), and it does not inspect page content. It is not a replacement for Google Safe Browsing, antivirus software, or your own judgement. Measured performance figures and known limitations are published in <code>EVALUATION.md</code> in the source repository.</p>
-<h2>Source code</h2>
-<p>The extension and the checking service are open source and can be audited: <a href="https://github.com/abhishekjaden/Phish-Sentry">https://github.com/abhishekjaden/Phish-Sentry</a></p>
-<p>If this policy and the code ever disagree, the code is the authority — please open an issue and the policy will be corrected.</p>
-<h2>Changes to this policy</h2>
-<p>Material changes will be accompanied by a version increment here and in the extension. The extension will not begin collecting a new category of data without this policy being updated first.</p>
-<h2>Contact</h2>
-<p>Abhishek Jaden — via the GitHub repository above.</p>
-</body></html>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172338;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:920px;margin:32px auto;padding:36px;background:#fff;border:1px solid #dbe4ef;border-radius:14px}h1{margin:.25em 0;font-size:2.3rem;line-height:1.15}h2{font-size:1.35rem;margin-top:2rem;line-height:1.3}h3{font-size:1.05rem;margin-top:1.3rem}a{color:#1755a6;text-underline-offset:3px}a:focus-visible{outline:3px solid #de9b22;outline-offset:3px}p,li{overflow-wrap:anywhere}.meta{color:#52627a;font-size:.94rem}.scope{background:#eef4ff;border-left:4px solid #356cca;padding:14px 18px}.scope p{margin:.4em 0}nav{border-block:1px solid #dbe4ef;padding:10px 0;margin:24px 0}li{margin:.45em 0}table{border-collapse:collapse;width:100%;font-size:.95rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #dbe4ef;padding:12px 10px}th{background:#f1f5fa}th:first-child{width:25%}code{font-size:.92em}footer{margin-top:32px;border-top:1px solid #dbe4ef;padding-top:18px;color:#52627a;font-size:.92rem}@media(max-width:640px){main{margin:0;border:0;border-radius:0;padding:24px 18px}h1{font-size:1.9rem}table{font-size:.88rem}th,td{padding:10px 7px}}@media print{body{background:#fff}main{max-width:none;margin:0;padding:0;border:0}a{color:inherit}}
+</style>
+</head>
+<body><main>
+<header>
+<p class="meta">PHISHSENTRY · ABHISHEK JADEN VETHANAYAGAM</p>
+<h1>Privacy Policy</h1>
+<p class="meta">Last updated: 28 October 2026</p>
+<div class="scope"><p><strong>Choose the notice for your version.</strong> This page describes the PhishSentry Connected pilot and version 3.4.0 release candidate. It does not mean that the Connected update has been submitted to, approved by or published in the Chrome Web Store.</p><p>For the previously published Lookalike Domain Checker, version 2.0.0, read the <a href="privacy-v2.0.0.html">25 July 2026 privacy policy</a>. Its hostname-only description does not describe Connected.</p></div>
+</header>
+<nav aria-label="Privacy policy contents"><a href="#operator">Operator</a> · <a href="#data">Data and choices</a> · <a href="#storage">Storage</a> · <a href="#requests">Privacy requests</a> · <a href="#providers">Providers</a> · <a href="#permissions">Permissions</a></nav>
+<section id="operator">
+<h2>1. Who operates PhishSentry</h2>
+<p>Abhishek Jaden Vethanayagam operates PhishSentry. For privacy or support requests, contact <a href="mailto:abhishekjaden@gmail.com">abhishekjaden@gmail.com</a>.</p>
+<p>PhishSentry helps users examine selected phishing indicators in web addresses, credential-form structure and explicitly selected email, understand findings and choose related protection actions. Results have limited coverage: no configured warning is not proof that a page or message is safe. Service availability does not establish independent model accuracy or production qualification.</p>
+</section>
+<section id="data">
+<h2>2. What Connected handles, and when</h2>
+<h3>Account registration and sign-in</h3>
+<p>Connected service features use a PhishSentry account. Users do not need their own AWS account. The extension's registration form sends the username, email address and account password directly to Amazon Cognito over HTTPS. Confirmation and recovery involve the username and verification code or new password as requested by the account service. Password and verification-code fields in the registration form are cleared after requests and when leaving the form; they are not saved in the observation feed.</p>
+<p>Cognito provides verification, hosted sign-in and password recovery. Sign-in uses an authorization-code flow with PKCE. The extension holds access and refresh credentials in Chrome session storage restricted to trusted extension contexts. Signing out clears those extension credentials and session findings and attempts token revocation and identity-provider session cleanup. A cleanup failure can be reported. An existing access token can remain usable until it expires, and a browser sign-in session with the identity provider may remain. Sign-out is not account deletion.</p>
+<h3>Visited pages and requested hostname checks</h3>
+<p>Automatic or requested hostname checks can send the hostname to the PhishSentry service. Routine hostname requests omit the URL path, query and fragment. Some configured domains bypass the automatic hostname-service call; that does not establish safety or disable applicable page checks.</p>
+<p>Packaged scripts inspect selected top-document page structure and credential-form indicators locally. They do not read typed website-password values or capture screenshots. Frames, shadow-root forms and script-driven behavior can limit coverage. The separate account password needed for registration or sign-in is handled as described above.</p>
+<p>Browser protection starts off on a fresh installation; a saved preference can be retained. When enabled, selected detected warnings can pause access in the affected tab. Page requests or scripts can run before a warning appears. Protection decisions, review choices and approvals can be included in the browser observation.</p>
+<h3>Selected email analysis</h3>
+<p>Email analysis is requested explicitly by the user, with the displayed disclosure and consent step. Selected details from a supported open Gmail message, or details manually supplied in the workbench, can include the sender, reply-to information, subject, visible message text, links, attachment names and supported capture evidence. Those details go to the PhishSentry analysis service. This flow does not silently scan the entire inbox or upload attachment file contents.</p>
+<p>The application processes the submitted details to return analysis. It does not intentionally save raw email-analysis inputs as cloud findings. This application behavior is separate from operational network and provider processing described below. Avoid submitting passwords, verification codes or unnecessary confidential information. Messages can contain sensitive personal information even though PhishSentry does not seek it for a separate health, financial or advertising purpose.</p>
+<h3>Security-coach questions</h3>
+<p>A question submitted to the security coach goes to the PhishSentry service, including when the answer is fixed reference guidance. Do not paste passwords, access keys or confidential content into a question.</p>
+<h3>Optional cloud summaries</h3>
+<p>Live cloud sync starts off. You can explicitly send one observation's redacted summary or consent to syncing future observations. Enabling sync does not automatically upload all older findings.</p>
+<p>Summary payloads contain the observation type, warning level, selected indicator codes and protection action, where applicable. They exclude hostnames, email text, sender details, questions, passwords and account tokens. A session credential separately authorizes the request, and accepted records are associated with the signed-in account. The summary service also records identifiers and timestamps needed for delivery and receipt handling. Redaction does not make the request anonymous.</p>
+<p>AWS acceptance and receipt readback are separate outcomes shown by the workbench. Pausing sync, clearing local observations, signing out or uninstalling does not erase records already accepted by the service.</p>
+<h3>Optional AI and public-site inspection</h3>
+<p>Generated AI guidance and public-site inspection are disabled in the current reported service configuration. Their appearance in the interface does not mean that they are available. If offered later, their provider, processing details and choices will be disclosed before use.</p>
+<p>The optional AI flow, if enabled and explicitly chosen for a question, sends that question, selected indicator codes and reference context through Amazon Bedrock. It does not automatically attach an email body or account token to the prompt; text that you paste into the question is included. The optional site-inspection flow, if enabled and separately consented to, sends a public hostname and path, excluding query and fragment, for a bounded static-HTML fetch. The destination website receives the service's request. That inspection does not execute the site's scripts.</p>
+<h3>Read aloud and downloaded observations</h3>
+<p>Read aloud plays fixed recordings bundled with the extension. The recordings were prepared using gTTS and Google Translate from fixed translated explanation sentences, not users' emails or browsing observations. Playback stays on the device, uses no microphone and does not send your selected message or finding to a runtime speech service.</p>
+<p>You can download a selected observation. That creates a file on your device; it does not upload the observation. You control that file, which remains after signing out or clearing the feed.</p>
+</section>
+<section id="storage">
+<h2>3. Where data is stored and for how long</h2>
+<table><thead><tr><th scope="col">Data</th><th scope="col">Handling</th></tr></thead><tbody>
+<tr><th scope="row">Browser observations</th><td>Up to 200 observations are held for up to 30 minutes in the extension's browser-worker memory. They clear on sign-out, account change or worker restart. Page observations can contain hostnames. Raw email text, sender/subject details and credentials are excluded from this feed.</td></tr>
+<tr><th scope="row">Hostname result cache</th><td>Connected can cache up to 300 hostname/result entries for up to 30 minutes in the browser worker. These hosted results are not written to the persistent local-mode cache, and the active cache clears when the signed-in session changes.</td></tr>
+<tr><th scope="row">Preferences and protection</th><td>Preferences and relevant protection state are stored by the extension. Up to 200 paused-tab records can retain the target URL and warning evidence in restricted Chrome session storage. These targets stay inside the extension. They can survive a worker restart, and sign-out does not silently release a warning. This protection state is separate from the observation feed.</td></tr>
+<tr><th scope="row">Account records</th><td>Cognito keeps account records separately from the extension session. Signing out or uninstalling does not delete them. The Connected release does not provide automatic expiry for inactive or unconfirmed accounts or an in-product account-deletion button. Use the support process below for account requests.</td></tr>
+<tr><th scope="row">Authentication credentials</th><td>The public Connected client is configured for 15-minute access and ID tokens and 30-day refresh tokens, with revocation enabled. These token lifetimes are not account-record retention periods or a guarantee of immediate rejection after sign-out.</td></tr>
+<tr><th scope="row">Accepted cloud summaries</th><td>The findings service stores account-associated redacted summaries in an encrypted DynamoDB table. The application assigns a 24-hour logical expiry and excludes expired records from its reads. DynamoDB TTL is enabled, but physical cleanup is asynchronous: expiry does not mean deletion happens at exactly 24 hours.</td></tr>
+<tr><th scope="row">Operational logs and network metadata</th><td>HTTPS services receive connection metadata, including IP addresses. The observed API access, Lambda and EKS control-plane log groups are configured for seven-day retention. EKS API, audit and authenticator logging is enabled; application load-balancer access and connection logs to S3 are disabled. These settings do not establish one retention period for every provider-managed security record, container collector or other infrastructure log.</td></tr>
+<tr><th scope="row">Backups and copies</th><td>Point-in-time recovery is disabled for the current findings table. No completed backups, AWS Backup recovery points or exports were reported in the inspected resource-scoped Mumbai listings on 28 October 2026. This is not a promise that all provider-managed copies or archives cease to exist when an application record expires.</td></tr>
+<tr><th scope="row">Downloads</th><td>Downloaded observation files stay on your device until you delete them. Clearing the browser feed does not remove these files.</td></tr>
+</tbody></table>
+<p>The above deployment settings were checked on 28 October 2026. PhishSentry does not use device GPS or request a geolocation permission. Ordinary IP and connection-metadata handling still occurs. The service may also keep bounded in-memory state to limit abuse; that state is separate from storing raw email contents.</p>
+</section>
+<section id="requests">
+<h2>4. Your choices and privacy requests</h2>
+<p>You can leave browser protection and live cloud sync off, decline optional uploads, clear session findings, sign out or remove the extension. A selected email or question is sent when you choose its analysis action. These controls have different effects: clearing local data does not delete your account or accepted cloud records.</p>
+<p>Send access, correction, account-closure or cloud-record deletion requests to <a href="mailto:abhishekjaden@gmail.com">abhishekjaden@gmail.com</a>. Requests are handled through support, rather than an automatic in-product deletion control. The operator may need to verify that a request relates to your account before taking account-specific action. Do not send passwords, verification codes or access tokens.</p>
+<p>No immediate or fixed-deadline erasure guarantee is made. An account or cloud record should not be assumed deleted merely because a request was sent, sign-out succeeded, or a local count returned to zero. Support can explain the action taken and any records that remain subject to operational, security or legal retention.</p>
+</section>
+<section id="providers">
+<h2>5. Providers, purposes and sharing</h2>
+<p>PhishSentry uses Amazon Web Services for hosted analysis, account identity and optional account-linked cloud records. The reviewed application, identity and findings deployment is in Mumbai, India. This does not mean that every email-delivery component, provider support system, log or backup is processed exclusively in India.</p>
+<p>This privacy page is hosted on GitHub Pages, whose host receives ordinary web-request metadata when you open it. Domain registration and DNS infrastructure use Cloudflare. The currently supplied DNS configuration uses DNS-only records for the public application, rather than Cloudflare's HTTP proxy. Loading the privacy page or resolving the domain is separate from choosing to send email details for analysis. These providers should not be confused with a claim that no third parties are involved.</p>
+<p>Data is used for the disclosed phishing-indicator checks, related explanations, protection choices, account access and optional summary delivery, and for necessary operation and security of those features. PhishSentry does not sell user data, use it for advertising or unrelated profiling, or use it for creditworthiness or lending. Submitted emails and questions are not used to train PhishSentry models.</p>
+<p>Transfers are limited to the services described here and permitted operational, security or legal purposes. Human access is limited to specifically consented support, necessary security or legal purposes, or permitted aggregated and anonymized internal operations.</p>
+<p>PhishSentry's use and transfer of user data complies with the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
+</section>
+<section id="permissions">
+<h2>6. Extension permissions</h2>
+<ul>
+<li><code>tabs</code>: associate navigation, selected-page checks and findings with the correct browser tab.</li>
+<li><code>storage</code>: keep preferences, protection state and restricted authentication-session storage.</li>
+<li><code>notifications</code>: show warnings associated with phishing indicators.</li>
+<li><code>alarms</code>: schedule expiry, rechecks and cleanup of temporary protection state.</li>
+<li><code>declarativeNetRequest</code>: apply scoped session navigation rules supporting user-enabled browser protection.</li>
+<li><code>identity</code>: complete hosted authentication redirects.</li>
+<li>HTTP/HTTPS host access: run packaged page checks and warnings, capture supported selected-email details after explicit action and consent, and communicate with the configured service and identity endpoints. This is not permission to silently scan the entire inbox.</li>
+</ul>
+</section>
+<section>
+<h2>7. Changes and discrepancies</h2>
+<p>Material changes will be described in this policy and the relevant product interface before affected new data handling begins, with consent where required. Code does not override a privacy commitment or authorize undisclosed collection. Report any discrepancy to <a href="mailto:abhishekjaden@gmail.com">abhishekjaden@gmail.com</a>.</p>
+<p>The <a href="https://github.com/abhishekjaden/Phish-Sentry">project repository</a> provides project material. A repository link alone does not establish that it contains every component or the current Connected release.</p>
+</section>
+<footer><p>Privacy and support: <a href="mailto:abhishekjaden@gmail.com">abhishekjaden@gmail.com</a><br>Operator: Abhishek Jaden Vethanayagam<br>Previous version: <a href="privacy-v2.0.0.html">PhishSentry 2.0.0 privacy policy</a></p></footer>
+</main></body></html>
