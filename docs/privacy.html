@@ -13,7 +13,7 @@
 <header>
 <p class="meta">PHISHSENTRY · ABHISHEK JADEN VETHANAYAGAM</p>
 <h1>Privacy Policy</h1>
-<p class="meta">Last updated: 2 November 2026</p>
+<p class="meta">Last updated: 5 November 2026</p>
 <div class="scope"><p><strong>Choose the notice for your version.</strong> This page describes the PhishSentry Connected pilot and versions 3.4.0, 3.4.1, 3.4.2 and 3.4.3 release candidates. It does not mean that the Connected update has been submitted to, approved by or published in the Chrome Web Store.</p><p>For the previously published Lookalike Domain Checker, version 2.0.0, read the <a href="privacy-v2.0.0.html">25 July 2026 privacy policy</a>. Its hostname-only description does not describe Connected.</p></div>
 </header>
 <nav aria-label="Privacy policy contents"><a href="#operator">Operator</a> · <a href="#data">Data and choices</a> · <a href="#storage">Storage</a> · <a href="#requests">Privacy requests</a> · <a href="#providers">Providers</a> · <a href="#permissions">Permissions</a></nav>
@@ -82,7 +82,7 @@
 <li><code>tabs</code>: associate navigation, selected-page checks and findings with the correct browser tab.</li>
 <li><code>storage</code>: keep preferences, protection state and restricted authentication-session storage.</li>
 <li><code>notifications</code>: show warnings associated with phishing indicators.</li>
-<li><code>alarms</code>: schedule expiry, rechecks and cleanup of temporary protection state.</li>
+<li><code>alarms</code>: inspect and clear legacy PhishSentry protection alarms during startup and protection-setting changes. Current hosted checks run from navigation and explicit user actions; this release does not create periodic alarm-based checks.</li>
 <li><code>declarativeNetRequest</code>: inspect and remove legacy dynamic redirect rules and temporary session allow rules during startup and protection-setting changes. Current protection opens a bundled warning page after detected indicators; it does not install new declarativeNetRequest blocking rules.</li>
 <li><code>identity</code>: complete hosted authentication redirects.</li>
 <li>HTTP/HTTPS host access: run packaged page checks and warnings, capture supported selected-email details after explicit action and consent, and communicate with the configured service and identity endpoints. This is not permission to silently scan the entire inbox.</li>
